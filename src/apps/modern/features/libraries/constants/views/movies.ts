@@ -61,6 +61,30 @@ const studiosTabContent: LibraryTabContent = {
     isBtnSortEnabled: false
 };
 
+const topRatedTabContent: LibraryTabContent = {
+    viewType: LibraryTab.TopRated,
+    collectionType: CollectionType.Movies,
+    itemType: [BaseItemKind.Movie],
+    // Ordering comes from TMDb, and the result set is whatever the library happens to own.
+    isBtnSortEnabled: false,
+    isBtnFilterEnabled: false,
+    isAlphabetPickerEnabled: false,
+    isPaginationEnabled: false,
+    noItemsMessage: 'MessageNoTopRatedItems'
+};
+
+const trendingTabContent: LibraryTabContent = {
+    viewType: LibraryTab.Trending,
+    collectionType: CollectionType.Movies,
+    itemType: [BaseItemKind.Movie],
+    // Ordering comes from TMDb, and the result set is whatever the library happens to own.
+    isBtnSortEnabled: false,
+    isBtnFilterEnabled: false,
+    isAlphabetPickerEnabled: false,
+    isPaginationEnabled: false,
+    noItemsMessage: 'MessageNoTrendingItems'
+};
+
 const moviesViews: Record<number, LibraryTabContent> = {
     0: moviesTabContent,
     1: suggestionsTabContent,
@@ -68,7 +92,9 @@ const moviesViews: Record<number, LibraryTabContent> = {
     3: collectionsTabContent,
     4: genresTabContent,
     5: studiosTabContent,
-    6: playlistsTabContent
+    6: playlistsTabContent,
+    7: trendingTabContent,
+    8: topRatedTabContent
 };
 
 export default moviesViews;
