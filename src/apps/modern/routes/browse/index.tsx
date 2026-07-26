@@ -8,6 +8,7 @@ import React, { type FC, useCallback, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { getBrowseModes } from 'apps/modern/features/libraries/constants/browseModes';
+import { getDecadeStyle, getRatingStyle } from 'apps/modern/features/libraries/constants/pickTiles';
 import { LibraryRoutes } from 'apps/modern/features/libraries/constants/libraryRoutes';
 import Page from 'components/Page';
 import { useGetQueryFiltersLegacy } from 'hooks/useFetchItems';
@@ -77,11 +78,13 @@ const BrowseModeTile: FC<{
 const PickTile: FC<{
     label: string;
     value: string;
+    Icon?: BrowseModeDefinition['Icon'];
+    iconColor?: string;
     onSelect: (value: string) => void;
-}> = ({ label, value, onSelect }) => {
+}> = ({ label, value, Icon, iconColor, onSelect }) => {
     const onClick = useCallback(() => onSelect(value), [onSelect, value]);
 
-    return <Tile label={label} onClick={onClick} />;
+    return <Tile label={label} Icon={Icon} iconColor={iconColor} onClick={onClick} />;
 };
 
 const TileGrid: FC<{ children: React.ReactNode }> = ({ children }) => (
@@ -129,7 +132,8 @@ const Browse: FC = () => {
 
             return startYears.map(startYear => ({
                 label: `${startYear}s`,
-                value: Array.from({ length: DECADE_LENGTH }, (_, offset) => startYear + offset).join(',')
+                value: Array.from({ length: DECADE_LENGTH }, (_, offset) => startYear + offset).join(','),
+                ...getDecadeStyle(startYear)
             }));
         }
 
@@ -137,7 +141,7 @@ const Browse: FC = () => {
             return (filters?.OfficialRatings ?? [])
                 .slice()
                 .sort((a, b) => a.localeCompare(b))
-                .map(rating => ({ label: rating, value: rating }));
+                .map(rating => ({ label: rating, value: rating, ...getRatingStyle(rating) }));
         }
 
         return [];
@@ -206,6 +210,8 @@ const Browse: FC = () => {
                                         key={option.value}
                                         label={option.label}
                                         value={option.value}
+                                        Icon={option.Icon}
+                                        iconColor={option.iconColor}
                                         onSelect={onPickClick}
                                     />
                                 ))}
