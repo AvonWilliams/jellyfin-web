@@ -69,8 +69,37 @@ Requires Node 24 or newer.
 
 ## Caveats
 
-- **A Jellyfin update replaces the web directory**, which undoes this. Re-copy the bundle
-  afterwards.
+### This does not survive a Jellyfin update
+
+In the official Docker image the web root is **baked into the image, not a mounted volume**.
+Recreating the container or pulling a newer Jellyfin image silently restores the stock client and
+the tiles vanish, with no error anywhere. The same applies to a package upgrade on bare metal or
+in an LXC, which replaces the web directory wholesale.
+
+To make it stick, mount the unpacked bundle over the web root rather than copying into it:
+
+```
+-v /path/to/dist:/jellyfin/jellyfin-web:ro
+```
+
+The mount wins over whatever the image ships. You will still want a fresh bundle when moving to a
+new Jellyfin version, since client and server are versioned together.
+
+Not sure where your web root is?
+
+```bash
+docker exec <container> sh -c 'cat /proc/1/cmdline | tr "\0" " "'   # a --webdir flag?
+docker exec <container> sh -c 'find / -name index.html -path "*web*" -not -path "*/config/*" 2>/dev/null'
+```
+
+Usually `/jellyfin/jellyfin-web` (official Docker image) or `/usr/share/jellyfin/web` (Debian /
+Ubuntu packages and most LXC installs). Back up before overwriting:
+
+```bash
+docker exec <container> cp -a /jellyfin/jellyfin-web /jellyfin/jellyfin-web.bak
+```
+
+### Other
 - Built against **Jellyfin 12.0-rc3**. Other versions may work but are untested.
 - The tile page is skipped entirely if you have set a specific landing view for a library.
 
