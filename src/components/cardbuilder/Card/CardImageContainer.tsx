@@ -61,6 +61,10 @@ const CardImageContainer: FC<CardImageContainerProps> = ({
                 </Box>
             )}
 
+            {cardOptions.showRank && item.IndexNumber != null && (
+                <Box className='cardRankBadge'>{item.IndexNumber}</Box>
+            )}
+
             <Media item={item} imgUrl={imgUrl} blurhash={blurhash} imageType={cardOptions.imageType} />
 
             {overlayText && (

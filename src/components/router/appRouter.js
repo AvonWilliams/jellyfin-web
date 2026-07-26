@@ -6,6 +6,7 @@ import itemHelper from '../itemHelper';
 import loading from '../loading/loading';
 import alert from '../alert';
 
+import { shouldShowBrowseModes } from 'apps/modern/features/libraries/utils/path';
 import layoutManager from 'components/layoutManager';
 import { getItemQuery } from 'hooks/useItem';
 import { ServerConnections } from 'lib/jellyfin-apiclient';
@@ -405,6 +406,12 @@ class AppRouter {
 
         if (context !== 'folders' && !itemHelper.isLocalItem(item)) {
             const isModernLayout = layoutManager.modern;
+
+            // Opening a library offers the browse modes first. Deep links that already know the
+            // view they want (such as the latest media rows) bypass this and go straight there.
+            if (!options.section && shouldShowBrowseModes(item.CollectionType, item.Id)) {
+                return `#/browse?topParentId=${item.Id}&collectionType=${item.CollectionType}`;
+            }
 
             if (isModernLayout && item.CollectionType == CollectionType.Books) {
                 url = `#/books?topParentId=${item.Id}&collectionType=${item.CollectionType}`;

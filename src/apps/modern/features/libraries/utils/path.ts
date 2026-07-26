@@ -1,5 +1,9 @@
+import type { CollectionType } from '@jellyfin/sdk/lib/generated-client/models/collection-type';
+
+import layoutManager from 'components/layoutManager';
 import * as userSettings from 'scripts/settings/userSettings';
 
+import { getBrowseModes } from '../constants/browseModes';
 import { LibraryRoutes } from '../constants/libraryRoutes';
 
 /**
@@ -14,6 +18,17 @@ export const isDetailsPath = (path: string) => (
  */
 export const isLibraryPath = (path: string) => (
     LibraryRoutes.some(route => route.path === path)
+);
+
+/**
+ * Utility function to check whether opening a library should offer the browse modes rather than
+ * going straight into a library view. A landing view the user has explicitly chosen always wins,
+ * which is what keeps the old behaviour reachable.
+ */
+export const shouldShowBrowseModes = (collectionType?: CollectionType | null, libraryId?: string | null) => (
+    layoutManager.modern
+    && !!getBrowseModes(collectionType)?.length
+    && !userSettings.get('landing-' + libraryId, false)
 );
 
 /**

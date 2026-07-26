@@ -138,6 +138,9 @@ const ItemsView: FC = () => {
             cardOptions.showSeriesTimerChannel = true;
             cardOptions.overlayMoreButton = true;
             cardOptions.lines = 3;
+        } else if (viewType === LibraryTab.Trending || viewType === LibraryTab.TopRated) {
+            cardOptions.overlayPlayButton = true;
+            cardOptions.showRank = true;
         } else if (viewType === LibraryTab.Movies) {
             cardOptions.overlayPlayButton = true;
         } else if (viewType === LibraryTab.Series || viewType === LibraryTab.Studios) {

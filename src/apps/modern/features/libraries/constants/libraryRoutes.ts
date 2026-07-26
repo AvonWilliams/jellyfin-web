@@ -145,6 +145,16 @@ export const LibraryRoutes: LibraryRoute[] = [
                 index: 6,
                 label: 'Playlists',
                 view: LibraryTab.Playlists
+            },
+            {
+                index: 7,
+                label: 'BrowseModeTrending',
+                view: LibraryTab.Trending
+            },
+            {
+                index: 8,
+                label: 'BrowseModeTopRated',
+                view: LibraryTab.TopRated
             }
         ]
     },
@@ -239,6 +249,16 @@ export const LibraryRoutes: LibraryRoute[] = [
                 index: 7,
                 label: 'Playlists',
                 view: LibraryTab.Playlists
+            },
+            {
+                index: 8,
+                label: 'BrowseModeTrending',
+                view: LibraryTab.Trending
+            },
+            {
+                index: 9,
+                label: 'BrowseModeTopRated',
+                view: LibraryTab.TopRated
             }
         ]
     },
