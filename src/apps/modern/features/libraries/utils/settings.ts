@@ -14,7 +14,10 @@ export const getDefaultSortBy = (viewType: LibraryTab): ItemSortBy[] => {
     return [ItemSortBy.SortName];
 };
 
-export const getDefaultLibraryViewSettings = (viewType: LibraryTab): LibraryViewSettings => {
+export const getDefaultLibraryViewSettings = (
+    viewType: LibraryTab,
+    browseModeSettings?: Partial<LibraryViewSettings>
+): LibraryViewSettings => {
     return {
         ShowTitle: true,
         ShowYear: true,
@@ -23,10 +26,17 @@ export const getDefaultLibraryViewSettings = (viewType: LibraryTab): LibraryView
         CardLayout: false,
         SortBy: getDefaultSortBy(viewType),
         SortOrder: SortOrder.Ascending,
-        StartIndex: 0
+        StartIndex: 0,
+        ...browseModeSettings
     };
 };
 
-export const getSettingsKey = (viewType: LibraryTab, parentId: ParentId) => {
-    return `${viewType} - ${parentId}`;
+/**
+ * Browse modes get their own storage key so that adjusting the sort within, say, "Just Added"
+ * does not overwrite the sort the user chose for the plain library view.
+ */
+export const getSettingsKey = (viewType: LibraryTab, parentId: ParentId, browseMode?: string | null) => {
+    return browseMode ?
+        `${viewType} - ${parentId} - ${browseMode}` :
+        `${viewType} - ${parentId}`;
 };

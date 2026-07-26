@@ -69,6 +69,30 @@ const playlistsTabContent: LibraryTabContent = {
     itemType: [BaseItemKind.Playlist]
 };
 
+const topRatedTabContent: LibraryTabContent = {
+    viewType: LibraryTab.TopRated,
+    collectionType: CollectionType.Tvshows,
+    itemType: [BaseItemKind.Series],
+    // Ordering comes from TMDb, and the result set is whatever the library happens to own.
+    isBtnSortEnabled: false,
+    isBtnFilterEnabled: false,
+    isAlphabetPickerEnabled: false,
+    isPaginationEnabled: false,
+    noItemsMessage: 'MessageNoTopRatedItems'
+};
+
+const trendingTabContent: LibraryTabContent = {
+    viewType: LibraryTab.Trending,
+    collectionType: CollectionType.Tvshows,
+    itemType: [BaseItemKind.Series],
+    // Ordering comes from TMDb, and the result set is whatever the library happens to own.
+    isBtnSortEnabled: false,
+    isBtnFilterEnabled: false,
+    isAlphabetPickerEnabled: false,
+    isPaginationEnabled: false,
+    noItemsMessage: 'MessageNoTrendingItems'
+};
+
 const tvShowsViews: Record<number, LibraryTabContent> = {
     0: seriesTabContent,
     1: suggestionsTabContent,
@@ -77,7 +101,9 @@ const tvShowsViews: Record<number, LibraryTabContent> = {
     4: studiosTabContent,
     5: episodesTabContent,
     6: collectionsTabContent,
-    7: playlistsTabContent
+    7: playlistsTabContent,
+    8: trendingTabContent,
+    9: topRatedTabContent
 };
 
 export default tvShowsViews;

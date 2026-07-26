@@ -91,6 +91,8 @@ export interface CardOptions {
     showIndex?: boolean;
     index?: string;
     showIndexNumber?: boolean;
+    /** Shows the item's position in a ranked list, taken from IndexNumber. */
+    showRank?: boolean;
     enableContentWrapper?: boolean;
     enableOverview?: boolean;
     enablePlayedButton?: boolean;
