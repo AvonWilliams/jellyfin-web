@@ -1,74 +1,88 @@
-<h1 align="center">Jellyfin Web</h1>
-<h3 align="center">Part of the <a href="https://jellyfin.org">Jellyfin Project</a></h3>
+<h1 align="center">jellyfin-web — Browse Modes fork</h1>
+
+<p align="center">
+A fork of the official Jellyfin web client that adds a <strong>tile grid</strong> when you open a
+Movies or TV library, instead of dropping straight into one long alphabetical list.
+</p>
 
 ---
 
-<p align="center">
-<img alt="Logo Banner" src="https://raw.githubusercontent.com/jellyfin/jellyfin-ux/master/branding/SVG/banner-logo-solid.svg?sanitize=true"/>
-<br/>
-<br/>
-<a href="https://github.com/jellyfin/jellyfin-web">
-<img alt="GPL 2.0 License" src="https://img.shields.io/github/license/jellyfin/jellyfin-web.svg"/>
-</a>
-<a href="https://github.com/jellyfin/jellyfin-web/releases">
-<img alt="Current Release" src="https://img.shields.io/github/release/jellyfin/jellyfin-web.svg"/>
-</a>
-<a href="https://translate.jellyfin.org/projects/jellyfin/jellyfin-web/?utm_source=widget">
-<img src="https://translate.jellyfin.org/widgets/jellyfin/-/jellyfin-web/svg-badge.svg" alt="Translation Status"/>
-</a>
-<br/>
-<a href="https://opencollective.com/jellyfin">
-<img alt="Donate" src="https://img.shields.io/opencollective/all/jellyfin.svg?label=backers"/>
-</a>
-<a href="https://features.jellyfin.org">
-<img alt="Feature Requests" src="https://img.shields.io/badge/fider-vote%20on%20features-success.svg"/>
-</a>
-<a href="https://matrix.to/#/+jellyfin:matrix.org">
-<img alt="Chat on Matrix" src="https://img.shields.io/matrix/jellyfin:matrix.org.svg?logo=matrix"/>
-</a>
-<a href="https://www.reddit.com/r/jellyfin">
-<img alt="Join our Subreddit" src="https://img.shields.io/badge/reddit-r%2Fjellyfin-%23FF5700.svg"/>
-</a>
-</p>
+## What this fork changes
 
-Jellyfin Web is the frontend used for most of the clients available for end users, such as desktop browsers, Android, and iOS. We welcome all contributions and pull requests! If you have a larger feature in mind please open an issue so we can discuss the implementation before you start. Translations can be improved very easily from our <a href="https://translate.jellyfin.org/projects/jellyfin/jellyfin-web">Weblate</a> instance. Look through the following graphic to see if your native language could use some work!
+Opening a Movies or TV library shows **Browse by…** — a grid of tiles, each a different way in:
 
-<a href="https://translate.jellyfin.org/engage/jellyfin/?utm_source=widget">
-<img src="https://translate.jellyfin.org/widgets/jellyfin/-/jellyfin-web/multi-auto.svg" alt="Detailed Translation Status"/>
-</a>
+**All** · **Unwatched** · **Just Added** · **Best Unseen** · **Random** · **Favorites** ·
+**Genres** · **Highest Rated** · **Top Rated** · **Trending** · **New Releases** ·
+**Decades** · **Studios / Networks** · **Recently Played** · **Age Rating** ·
+**Critics' Picks** *(films only)* · **Longest**
 
-## Build Process
+Nothing is hidden — the first tile, **All**, is the ordinary list exactly as it was. Each tile
+also remembers its own sort, so changing the sort inside "Just Added" leaves your normal library
+view alone.
 
-### Dependencies
+That is 18 changed files against upstream, on the [`browse-modes`](../../tree/browse-modes)
+branch. Everything else is stock Jellyfin.
 
-- [Node.js](https://nodejs.org/en/download)
-- npm (included in Node.js)
+> **This fork covers the browser and the Jellyfin _phone_ app** — the phone app is a WebView over
+> this bundle, so it picks the change up automatically. The Jellyfin **TV** app is native and
+> shares nothing with this code; it needs
+> [its own fork](https://github.com/AvonWilliams/jellyfin-androidtv).
 
-### Getting Started
+## Install
 
-1. Clone or download this repository.
+You almost certainly do not want to build this. Grab the prebuilt bundle:
 
-   ```sh
-   git clone https://github.com/jellyfin/jellyfin-web.git
-   cd jellyfin-web
-   ```
+**1. Download** `jellyfin-web-browse-modes.zip` from the
+[Browse Modes releases](https://github.com/AvonWilliams/jellyfin-browse-modes/releases).
 
-2. Install build dependencies in the project directory.
+**2. Unpack it over your server's web directory.** For the official Docker image:
 
-   ```sh
-   npm install
-   ```
+```bash
+unzip jellyfin-web-browse-modes.zip
+docker cp dist/. <your-jellyfin-container>:/jellyfin/jellyfin-web/
+```
 
-3. Run the web client with webpack for local development.
+Without Docker it is wherever `--webdir` points, typically `/usr/share/jellyfin/web`.
 
-   ```sh
-   npm start
-   ```
+**3. Hard-refresh your browser — `Ctrl+Shift+R`.** Jellyfin caches its own interface
+aggressively. Skip this and the tiles will not appear and you will think the install failed.
+On the phone app, force-close and reopen it.
 
-4. Build the client with sourcemaps available.
+### Optional: the server plugin
 
-   ```sh
-   npm run build:development
-   ```
+Two tiles — **Trending** and **Top Rated** — read curated TMDb lists and need the
+[Browse Modes plugin](https://github.com/AvonWilliams/jellyfin-browse-modes) installed on your
+server. Every other tile works without it; those two just come up empty.
 
-Review the [Contributing Guide](./CONTRIBUTING.md) for more information on our process and tech stack.
+Your Jellyfin server stays completely standard either way — there is no custom server build.
+
+### Building from source
+
+```bash
+git clone -b browse-modes https://github.com/AvonWilliams/jellyfin-web.git
+cd jellyfin-web
+npm ci
+npm run build:production        # -> dist/
+```
+
+Requires Node 24 or newer.
+
+## Caveats
+
+- **A Jellyfin update replaces the web directory**, which undoes this. Re-copy the bundle
+  afterwards.
+- Built against **Jellyfin 12.0-rc3**. Other versions may work but are untested.
+- The tile page is skipped entirely if you have set a specific landing view for a library.
+
+## Documentation
+
+- [User guide](https://github.com/AvonWilliams/jellyfin-browse-modes/blob/main/docs/USER-GUIDE.md)
+  — what each tile does, install walkthrough, troubleshooting
+- [Technical reference](https://github.com/AvonWilliams/jellyfin-browse-modes/blob/main/docs/TECHNICAL.md)
+  — every change, why, and how to re-apply it to a newer Jellyfin release
+
+## Upstream
+
+This is a fork of [jellyfin/jellyfin-web](https://github.com/jellyfin/jellyfin-web) and remains
+under **GPL-2.0**. All credit for Jellyfin itself goes to its maintainers and contributors; the
+browse modes work is an unaffiliated addition.
