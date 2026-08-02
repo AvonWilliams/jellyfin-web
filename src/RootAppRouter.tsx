@@ -9,7 +9,6 @@ import {
 
 import { DASHBOARD_APP_PATHS, DASHBOARD_APP_ROUTES } from 'apps/dashboard/routes/routes';
 import { EXPERIMENTAL_APP_ROUTES } from 'apps/experimental/routes/routes';
-import { STABLE_APP_ROUTES } from 'apps/stable/routes/routes';
 import { WIZARD_APP_ROUTES } from 'apps/wizard/routes/routes';
 import AppHeader from 'components/AppHeader';
 import Backdrop from 'components/Backdrop';
@@ -18,14 +17,11 @@ import { createRouterHistory } from 'components/router/routerHistory';
 import appTheme from 'themes/themes';
 import { ThemeStorageManager } from 'themes/themeStorageManager';
 
-const layoutMode = localStorage.getItem('layout');
-const isExperimentalLayout = layoutMode === 'experimental';
-
 const router = createHashRouter([
     {
         element: <RootAppLayout />,
         children: [
-            ...(isExperimentalLayout ? EXPERIMENTAL_APP_ROUTES : STABLE_APP_ROUTES),
+            ...EXPERIMENTAL_APP_ROUTES,
             ...DASHBOARD_APP_ROUTES,
             ...WIZARD_APP_ROUTES,
             {
@@ -58,7 +54,7 @@ function RootAppLayout() {
             storageManager={ThemeStorageManager}
         >
             <Backdrop />
-            <AppHeader isHidden={isExperimentalLayout || isNewLayoutPath} />
+            <AppHeader isHidden={isNewLayoutPath} />
 
             <Outlet />
         </ThemeProvider>
