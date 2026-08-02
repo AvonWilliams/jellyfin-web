@@ -408,8 +408,9 @@ class AppRouter {
             // view they want (such as the latest media rows) bypass this and go straight there.
             // In 10.11, CollectionType may be on the item, passed via options.context, or
             // inferred from the item path/name for libraries whose type was not stored.
+            // Only infer for collection folders — individual items must not be intercepted.
             let collectionType = item.CollectionType || (options && options.context);
-            if (!collectionType && item.Path) {
+            if (!collectionType && item.Type === 'CollectionFolder' && item.Path) {
                 if (item.Path.includes('/Shows') || item.Path.includes('/Series') || item.Name === 'Shows') {
                     collectionType = CollectionType.Tvshows;
                 } else if (item.Path.includes('/Movies') || item.Name === 'Movies') {

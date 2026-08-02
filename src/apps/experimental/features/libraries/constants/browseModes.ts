@@ -49,6 +49,12 @@ const justAddedMode: BrowseModeDefinition = {
     }
 };
 
+const monthsAgo = (n: number) => {
+    const d = new Date();
+    d.setMonth(d.getMonth() - n);
+    return d.toISOString();
+};
+
 const newReleasesMode: BrowseModeDefinition = {
     mode: BrowseMode.NewReleases,
     label: 'BrowseModeNewReleases',
@@ -56,7 +62,8 @@ const newReleasesMode: BrowseModeDefinition = {
     iconColor: '#6FB3E0',
     settings: {
         SortBy: ItemSortBy.PremiereDate,
-        SortOrder: SortOrder.Descending
+        SortOrder: SortOrder.Descending,
+        MinPremiereDate: monthsAgo(9)
     }
 };
 

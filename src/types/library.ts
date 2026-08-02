@@ -63,4 +63,5 @@ export interface LibraryViewSettings {
     ShowYear?: boolean;
     Filters?: Filters;
     Alphabet?: string | null;
+    MinPremiereDate?: string;
 }
