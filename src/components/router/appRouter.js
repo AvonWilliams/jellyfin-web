@@ -406,8 +406,18 @@ class AppRouter {
         if (context !== 'folders' && !itemHelper.isLocalItem(item)) {
             // Opening a library offers the browse modes first. Deep links that already know the
             // view they want (such as the latest media rows) bypass this and go straight there.
-            if (!options.section && shouldShowBrowseModes(item.CollectionType, item.Id)) {
-                return `#/browse?topParentId=${item.Id}&collectionType=${item.CollectionType}`;
+            // In 10.11, CollectionType may be on the item, passed via options.context, or
+            // inferred from the item path/name for libraries whose type was not stored.
+            let collectionType = item.CollectionType || (options && options.context);
+            if (!collectionType && item.Path) {
+                if (item.Path.includes('/Shows') || item.Path.includes('/Series') || item.Name === 'Shows') {
+                    collectionType = CollectionType.Tvshows;
+                } else if (item.Path.includes('/Movies') || item.Name === 'Movies') {
+                    collectionType = CollectionType.Movies;
+                }
+            }
+            if (!options.section && shouldShowBrowseModes(collectionType, item.Id)) {
+                return `#/browse?topParentId=${item.Id}&collectionType=${collectionType}`;
             }
 
             if (item.CollectionType == CollectionType.Movies) {
