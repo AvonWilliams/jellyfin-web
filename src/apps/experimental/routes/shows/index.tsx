@@ -48,13 +48,44 @@ const genresTabContent: LibraryTabContent = {
     collectionType: CollectionType.Tvshows
 };
 
+const favoritesTabContent: LibraryTabContent = {
+    viewType: LibraryTab.Favorites,
+    collectionType: CollectionType.Tvshows,
+    itemType: [BaseItemKind.Series]
+};
+
+const topRatedTabContent: LibraryTabContent = {
+    viewType: LibraryTab.TopRated,
+    collectionType: CollectionType.Tvshows,
+    itemType: [BaseItemKind.Series],
+    isBtnSortEnabled: false,
+    isBtnFilterEnabled: false,
+    isAlphabetPickerEnabled: false,
+    isPaginationEnabled: false,
+    noItemsMessage: 'MessageNoTopRatedItems'
+};
+
+const trendingTabContent: LibraryTabContent = {
+    viewType: LibraryTab.Trending,
+    collectionType: CollectionType.Tvshows,
+    itemType: [BaseItemKind.Series],
+    isBtnSortEnabled: false,
+    isBtnFilterEnabled: false,
+    isAlphabetPickerEnabled: false,
+    isPaginationEnabled: false,
+    noItemsMessage: 'MessageNoTrendingItems'
+};
+
 const tvShowsTabMapping: LibraryTabMapping = {
     0: seriesTabContent,
     1: suggestionsTabContent,
     2: upcomingTabContent,
     3: genresTabContent,
     4: networksTabContent,
-    5: episodesTabContent
+    5: episodesTabContent,
+    6: favoritesTabContent,
+    7: trendingTabContent,
+    8: topRatedTabContent
 };
 
 const Shows: FC = () => {

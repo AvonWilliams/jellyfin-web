@@ -871,3 +871,21 @@ button::-moz-focus-inner {
     transform: scale(1.4, 1.4);
     transition: 0.2s;
 }
+
+// Position within a ranked list (TMDb trending, top rated).
+.cardRankBadge {
+    position: absolute;
+    top: 0.4em;
+    left: 0.4em;
+    z-index: 1;
+    min-width: 1.9em;
+    padding: 0.15em 0.45em;
+    border-radius: 0.4em;
+    background-color: rgba(0, 0, 0, 0.75);
+    color: #fff;
+    font-size: 0.9em;
+    font-weight: 600;
+    line-height: 1.5;
+    text-align: center;
+    pointer-events: none;
+}

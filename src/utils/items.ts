@@ -142,8 +142,10 @@ export const getFiltersQuery = (
     };
 };
 
-export const getSettingsKey = (viewType: LibraryTab, parentId: ParentId) => {
-    return `${viewType} - ${parentId}`;
+export const getSettingsKey = (viewType: LibraryTab, parentId: ParentId, browseMode?: string | null) => {
+    return browseMode ?
+        `${viewType} - ${parentId} - ${browseMode}` :
+        `${viewType} - ${parentId}`;
 };
 
 export const getDefaultSortBy = (viewType: LibraryTab) => {
@@ -154,7 +156,10 @@ export const getDefaultSortBy = (viewType: LibraryTab) => {
     return ItemSortBy.SortName;
 };
 
-export const getDefaultLibraryViewSettings = (viewType: LibraryTab): LibraryViewSettings => {
+export const getDefaultLibraryViewSettings = (
+    viewType: LibraryTab,
+    browseModeSettings?: Partial<LibraryViewSettings>
+): LibraryViewSettings => {
     return {
         ShowTitle: true,
         ShowYear: false,
@@ -163,7 +168,8 @@ export const getDefaultLibraryViewSettings = (viewType: LibraryTab): LibraryView
         CardLayout: false,
         SortBy: getDefaultSortBy(viewType),
         SortOrder: SortOrder.Ascending,
-        StartIndex: 0
+        StartIndex: 0,
+        ...browseModeSettings
     };
 };
 

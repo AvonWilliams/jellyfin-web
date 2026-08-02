@@ -12,6 +12,8 @@ import { toApi } from 'utils/jellyfin-apiclient/compat';
 import { queryClient } from 'utils/query/queryClient';
 import { history } from 'RootAppRouter';
 
+import { shouldShowBrowseModes } from 'apps/experimental/features/libraries/utils/path';
+
 /** Pages of "no return" (when "Go back" should behave differently, probably quitting the application). */
 const START_PAGE_PATHS = ['/home', '/login', '/selectserver'];
 
@@ -402,6 +404,12 @@ class AppRouter {
         }
 
         if (context !== 'folders' && !itemHelper.isLocalItem(item)) {
+            // Opening a library offers the browse modes first. Deep links that already know the
+            // view they want (such as the latest media rows) bypass this and go straight there.
+            if (!options.section && shouldShowBrowseModes(item.CollectionType, item.Id)) {
+                return `#/browse?topParentId=${item.Id}&collectionType=${item.CollectionType}`;
+            }
+
             if (item.CollectionType == CollectionType.Movies) {
                 url = `#/movies?topParentId=${item.Id}&collectionType=${item.CollectionType}`;
 

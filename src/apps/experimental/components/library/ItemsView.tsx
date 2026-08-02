@@ -7,7 +7,8 @@ import ButtonGroup from '@mui/material/ButtonGroup';
 import type { Theme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import classNames from 'classnames';
-import React, { type FC, useCallback } from 'react';
+import React, { type FC, useCallback, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 import { useApi } from 'hooks/useApi';
 import { useLocalStorage } from 'hooks/useLocalStorage';
@@ -25,6 +26,8 @@ import { type LibraryViewSettings, type ParentId, ViewMode } from 'types/library
 import type { CardOptions } from 'types/cardOptions';
 import type { ListOptions } from 'types/listOptions';
 import { useItem } from 'hooks/useItem';
+
+import { getBrowseMode } from 'apps/experimental/features/libraries/constants/browseModes';
 
 import AlphabetPicker from './AlphabetPicker';
 import FilterButton from './filter/FilterButton';
@@ -70,10 +73,41 @@ const ItemsView: FC<ItemsViewProps> = ({
     itemType,
     noItemsMessage
 }) => {
+    const [searchParams] = useSearchParams();
+
+    // A browse mode seeds the sort and filters for the view it opens. Picker modes additionally
+    // carry the chosen value, so each choice is treated as a distinct mode of its own.
+    const browseMode = searchParams.get('browseMode');
+    const browsePick = searchParams.get('pick');
+    const browseModeSettings = useMemo(() => {
+        const definition = getBrowseMode(collectionType, browseMode);
+        if (!definition) {
+            return undefined;
+        }
+
+        if (!definition.picker || !browsePick) {
+            return definition.settings;
+        }
+
+        const values = browsePick.split(',');
+        const filterValue = definition.picker.filter === 'Years' ?
+            values.map(value => parseInt(value, 10)).filter(value => !isNaN(value)) :
+            values;
+
+        return {
+            ...definition.settings,
+            Filters: {
+                ...definition.settings?.Filters,
+                [definition.picker.filter]: filterValue
+            }
+        };
+    }, [collectionType, browseMode, browsePick]);
+    const browseModeKey = browseMode && browsePick ? `${browseMode}-${browsePick}` : browseMode;
+
     const [libraryViewSettings, setLibraryViewSettings] =
         useLocalStorage<LibraryViewSettings>(
-            getSettingsKey(viewType, parentId),
-            getDefaultLibraryViewSettings(viewType)
+            getSettingsKey(viewType, parentId, browseModeKey),
+            getDefaultLibraryViewSettings(viewType, browseModeSettings)
         );
     const isSmallScreen = useMediaQuery((t: Theme) => t.breakpoints.up('sm'));
 
@@ -173,6 +207,9 @@ const ItemsView: FC<ItemsViewProps> = ({
             cardOptions.showSeriesTimerChannel = true;
             cardOptions.overlayMoreButton = true;
             cardOptions.lines = 3;
+        } else if (viewType === LibraryTab.Trending || viewType === LibraryTab.TopRated) {
+            cardOptions.overlayPlayButton = true;
+            cardOptions.showRank = true;
         } else if (viewType === LibraryTab.Movies) {
             cardOptions.overlayPlayButton = true;
         } else if (viewType === LibraryTab.Series || viewType === LibraryTab.Networks) {

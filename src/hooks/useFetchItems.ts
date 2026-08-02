@@ -1,6 +1,6 @@
 import type { AxiosRequestConfig } from 'axios';
 import type { ItemsApiGetItemsRequest, PlaylistsApiMoveItemRequest } from '@jellyfin/sdk/lib/generated-client';
-import type { BaseItemKind } from '@jellyfin/sdk/lib/generated-client/models/base-item-kind';
+import { BaseItemKind } from '@jellyfin/sdk/lib/generated-client/models/base-item-kind';
 import { ImageType } from '@jellyfin/sdk/lib/generated-client/models/image-type';
 import { ItemFields } from '@jellyfin/sdk/lib/generated-client/models/item-fields';
 import { ItemFilter } from '@jellyfin/sdk/lib/generated-client/models/item-filter';
@@ -215,6 +215,38 @@ export const useGetQueryFiltersLegacy = (
     });
 };
 
+/**
+ * Fetches one of the curated TMDb lists, narrowed to items in the library.
+ *
+ * These are served by custom server endpoints, so there is no generated SDK client for them.
+ * The server returns items already ordered by TMDb's ranking.
+ */
+const fetchDiscoverList = (
+    api: NonNullable<JellyfinApiContext['api']>,
+    userId: string,
+    viewType: LibraryTab,
+    parentId: ParentId,
+    itemType: BaseItemKind[],
+    options?: AxiosRequestConfig
+) => {
+    const list = viewType === LibraryTab.TopRated ? 'TopRated' : 'Trending';
+    const kind = itemType.includes(BaseItemKind.Series) ? 'Shows' : 'Movies';
+
+    return api.axiosInstance.get<ItemDtoQueryResult>(
+        `${api.basePath}/Discover/${list}/${kind}`,
+        {
+            params: {
+                userId,
+                parentId: parentId ?? undefined,
+                fields: ItemFields.PrimaryImageAspectRatio,
+                limit: 48
+            },
+            headers: { Authorization: api.authorizationHeader },
+            signal: options?.signal
+        }
+    );
+};
+
 const fetchGetItemsViewByType = async (
     currentApi: JellyfinApiContext,
     viewType: LibraryTab,
@@ -312,6 +344,10 @@ const fetchGetItemsViewByType = async (
                     }
                 );
                 break;
+            case LibraryTab.Trending:
+            case LibraryTab.TopRated:
+                response = await fetchDiscoverList(api, user.Id, viewType, parentId, itemType, options);
+                break;
             default: {
                 response = await getItemsApi(api).getItems(
                     {
@@ -387,7 +423,9 @@ export const useGetItemsViewByType = (
                 LibraryTab.Photos,
                 LibraryTab.Videos,
                 LibraryTab.Channels,
-                LibraryTab.SeriesTimers
+                LibraryTab.SeriesTimers,
+                LibraryTab.Trending,
+                LibraryTab.TopRated
             ].includes(viewType)
     });
 };
