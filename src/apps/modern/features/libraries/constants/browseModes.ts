@@ -2,22 +2,18 @@ import { CollectionType } from '@jellyfin/sdk/lib/generated-client/models/collec
 import { ItemFilter } from '@jellyfin/sdk/lib/generated-client/models/item-filter';
 import { ItemSortBy } from '@jellyfin/sdk/lib/generated-client/models/item-sort-by';
 import { SortOrder } from '@jellyfin/sdk/lib/generated-client/models/sort-order';
-import AccessTime from '@mui/icons-material/AccessTime';
 import Apps from '@mui/icons-material/Apps';
 import Business from '@mui/icons-material/Business';
 import CalendarMonth from '@mui/icons-material/CalendarMonth';
 import Category from '@mui/icons-material/Category';
 import FiberNew from '@mui/icons-material/FiberNew';
-import Favorite from '@mui/icons-material/Favorite';
 import FamilyRestroom from '@mui/icons-material/FamilyRestroom';
 import History from '@mui/icons-material/History';
 import NewReleases from '@mui/icons-material/NewReleases';
 import Shuffle from '@mui/icons-material/Shuffle';
 import MilitaryTech from '@mui/icons-material/MilitaryTech';
-import Star from '@mui/icons-material/Star';
 import Reviews from '@mui/icons-material/Reviews';
 import Recommend from '@mui/icons-material/Recommend';
-import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import TrendingUp from '@mui/icons-material/TrendingUp';
 
 import { BrowseMode, type BrowseModeDefinition } from 'types/browseMode';
@@ -71,17 +67,6 @@ const randomMode: BrowseModeDefinition = {
     }
 };
 
-const highestRatedMode: BrowseModeDefinition = {
-    mode: BrowseMode.HighestRated,
-    label: 'BrowseModeHighestRated',
-    Icon: Star,
-    iconColor: '#EECE55',
-    settings: {
-        SortBy: ItemSortBy.CommunityRating,
-        SortOrder: SortOrder.Descending
-    }
-};
-
 const decadesMode: BrowseModeDefinition = {
     mode: BrowseMode.Decades,
     label: 'BrowseModeDecades',
@@ -112,24 +97,6 @@ const networksMode: BrowseModeDefinition = {
     iconColor: '#5AC8E0'
 };
 
-const unwatchedMode: BrowseModeDefinition = {
-    mode: BrowseMode.Unwatched,
-    label: 'BrowseModeUnwatched',
-    Icon: VisibilityOff,
-    iconColor: '#A98BD6',
-    settings: {
-        Filters: { Status: [ItemFilter.IsUnplayed] }
-    }
-};
-
-const favoritesMode: BrowseModeDefinition = {
-    mode: BrowseMode.Favorites,
-    label: 'Favorites',
-    Icon: Favorite,
-    iconColor: '#E5687A',
-    view: LibraryTab.Favorites
-};
-
 const criticsPicksMode: BrowseModeDefinition = {
     mode: BrowseMode.CriticsPicks,
     label: 'BrowseModeCriticsPicks',
@@ -141,24 +108,13 @@ const criticsPicksMode: BrowseModeDefinition = {
     }
 };
 
-const recentlyPlayedMode: BrowseModeDefinition = {
-    mode: BrowseMode.RecentlyPlayed,
-    label: 'BrowseModeRecentlyPlayed',
+const watchAgainMode: BrowseModeDefinition = {
+    mode: BrowseMode.WatchAgain,
+    label: 'BrowseModeWatchAgain',
     Icon: History,
     iconColor: '#86C98B',
     settings: {
         SortBy: ItemSortBy.DatePlayed,
-        SortOrder: SortOrder.Descending
-    }
-};
-
-const longestMode: BrowseModeDefinition = {
-    mode: BrowseMode.Longest,
-    label: 'BrowseModeLongest',
-    Icon: AccessTime,
-    iconColor: '#B5895E',
-    settings: {
-        SortBy: ItemSortBy.Runtime,
         SortOrder: SortOrder.Descending
     }
 };
@@ -180,9 +136,9 @@ const topRatedMode: BrowseModeDefinition = {
 };
 
 // The best thing you own but have not got to yet.
-const bestUnseenMode: BrowseModeDefinition = {
-    mode: BrowseMode.BestUnseen,
-    label: 'BrowseModeBestUnseen',
+const hiddenGemsMode: BrowseModeDefinition = {
+    mode: BrowseMode.HiddenGems,
+    label: 'BrowseModeHiddenGems',
     Icon: Recommend,
     iconColor: '#F2C14E',
     settings: {
@@ -194,41 +150,33 @@ const bestUnseenMode: BrowseModeDefinition = {
 
 const movieBrowseModes: BrowseModeDefinition[] = [
     allMode,
-    unwatchedMode,
     justAddedMode,
-    bestUnseenMode,
+    hiddenGemsMode,
     randomMode,
-    favoritesMode,
     genresMode,
-    highestRatedMode,
     topRatedMode,
     trendingMode,
     newReleasesMode,
     decadesMode,
     studiosMode,
-    recentlyPlayedMode,
+    watchAgainMode,
     ageRatingMode,
-    criticsPicksMode,
-    longestMode
+    criticsPicksMode
 ];
 
 const tvBrowseModes: BrowseModeDefinition[] = [
     allMode,
-    unwatchedMode,
     justAddedMode,
-    bestUnseenMode,
+    hiddenGemsMode,
     randomMode,
-    favoritesMode,
     genresMode,
-    highestRatedMode,
     topRatedMode,
     trendingMode,
     newReleasesMode,
     decadesMode,
     networksMode,
-    recentlyPlayedMode,
-    ageRatingMode,
-    longestMode
+    watchAgainMode,
+    ageRatingMode
 ];
 
 /**
