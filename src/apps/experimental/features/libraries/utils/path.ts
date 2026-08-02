@@ -1,6 +1,5 @@
 import type { CollectionType } from '@jellyfin/sdk/lib/generated-client/models/collection-type';
 
-import layoutManager from 'components/layoutManager';
 import * as userSettings from 'scripts/settings/userSettings';
 
 import { getBrowseModes } from '../constants/browseModes';
@@ -19,8 +18,7 @@ export const isLibraryPath = (path: string) => (
  * which is what keeps the old behaviour reachable.
  */
 export const shouldShowBrowseModes = (collectionType?: CollectionType | null, libraryId?: string | null) => (
-    layoutManager.experimental
-    && !!getBrowseModes(collectionType)?.length
+    !!getBrowseModes(collectionType)?.length
     && !userSettings.get('landing-' + libraryId, false)
 );
 
