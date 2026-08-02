@@ -1,6 +1,8 @@
+import { AppType } from 'constants/appType';
 import { AsyncRoute } from '../../../../components/router/AsyncRoute';
 
 export const ASYNC_USER_ROUTES: AsyncRoute[] = [
+    { path: 'browse', type: AppType.Experimental },
     { path: 'mypreferencesmenu', page: 'user/settings' },
     { path: 'quickconnect', page: 'quickConnect' },
     { path: 'search', page: 'search' },
