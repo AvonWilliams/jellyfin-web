@@ -150,32 +150,32 @@ const hiddenGemsMode: BrowseModeDefinition = {
 
 const movieBrowseModes: BrowseModeDefinition[] = [
     allMode,
-    justAddedMode,
-    hiddenGemsMode,
-    randomMode,
-    genresMode,
-    topRatedMode,
     trendingMode,
+    topRatedMode,
+    genresMode,
+    hiddenGemsMode,
+    justAddedMode,
     newReleasesMode,
+    randomMode,
+    criticsPicksMode,
+    watchAgainMode,
     decadesMode,
     studiosMode,
-    watchAgainMode,
-    ageRatingMode,
-    criticsPicksMode
+    ageRatingMode
 ];
 
 const tvBrowseModes: BrowseModeDefinition[] = [
     allMode,
-    justAddedMode,
-    hiddenGemsMode,
-    randomMode,
-    genresMode,
-    topRatedMode,
     trendingMode,
+    topRatedMode,
+    genresMode,
+    hiddenGemsMode,
+    justAddedMode,
     newReleasesMode,
+    randomMode,
+    watchAgainMode,
     decadesMode,
     networksMode,
-    watchAgainMode,
     ageRatingMode
 ];
 
