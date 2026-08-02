@@ -406,19 +406,20 @@ class AppRouter {
         if (context !== 'folders' && !itemHelper.isLocalItem(item)) {
             // Opening a library offers the browse modes first. Deep links that already know the
             // view they want (such as the latest media rows) bypass this and go straight there.
-            // In 10.11, CollectionType may be on the item, passed via options.context, or
-            // inferred from the item path/name for libraries whose type was not stored.
-            // Only infer for collection folders — individual items must not be intercepted.
-            let collectionType = item.CollectionType || (options && options.context);
-            if (!collectionType && item.Type === 'CollectionFolder' && item.Path) {
-                if (item.Path.includes('/Shows') || item.Path.includes('/Series') || item.Name === 'Shows') {
-                    collectionType = CollectionType.Tvshows;
-                } else if (item.Path.includes('/Movies') || item.Name === 'Movies') {
-                    collectionType = CollectionType.Movies;
+            // ONLY intercept collection folders — individual items must never be intercepted even
+            // if they carry a collection type via options.context.
+            if (item.Type === 'CollectionFolder' && !options.section) {
+                let collectionType = item.CollectionType || (options && options.context);
+                if (!collectionType && item.Path) {
+                    if (item.Path.includes('/Shows') || item.Path.includes('/Series') || item.Name === 'Shows') {
+                        collectionType = CollectionType.Tvshows;
+                    } else if (item.Path.includes('/Movies') || item.Name === 'Movies') {
+                        collectionType = CollectionType.Movies;
+                    }
                 }
-            }
-            if (!options.section && shouldShowBrowseModes(collectionType, item.Id)) {
-                return `#/browse?topParentId=${item.Id}&collectionType=${collectionType}`;
+                if (shouldShowBrowseModes(collectionType, item.Id)) {
+                    return `#/browse?topParentId=${item.Id}&collectionType=${collectionType}`;
+                }
             }
 
             if (item.CollectionType == CollectionType.Movies) {
