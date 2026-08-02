@@ -154,6 +154,7 @@ const recentlyPlayedMode: BrowseModeDefinition = {
     Icon: History,
     iconColor: '#86C98B',
     settings: {
+        Filters: { Status: [ItemFilter.IsPlayed] },
         SortBy: ItemSortBy.DatePlayed,
         SortOrder: SortOrder.Descending
     }
