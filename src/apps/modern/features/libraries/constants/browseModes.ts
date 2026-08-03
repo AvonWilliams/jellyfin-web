@@ -14,10 +14,17 @@ import Shuffle from '@mui/icons-material/Shuffle';
 import MilitaryTech from '@mui/icons-material/MilitaryTech';
 import Reviews from '@mui/icons-material/Reviews';
 import Recommend from '@mui/icons-material/Recommend';
+import AutoStories from '@mui/icons-material/AutoStories';
+import Mood from '@mui/icons-material/Mood';
+import Palette from '@mui/icons-material/Palette';
+import Public from '@mui/icons-material/Public';
+import Timeline from '@mui/icons-material/Timeline';
 import TrendingUp from '@mui/icons-material/TrendingUp';
 
 import { BrowseMode, type BrowseModeDefinition } from 'types/browseMode';
 import { LibraryTab } from 'types/libraryTab';
+
+import { MOOD_TAGS, PLOT_ELEMENT_TAGS, STORY_THEME_TAGS, STYLE_TAGS, WORLD_TAGS } from './browseTags';
 
 const allMode: BrowseModeDefinition = {
     mode: BrowseMode.All,
@@ -135,6 +142,46 @@ const topRatedMode: BrowseModeDefinition = {
     view: LibraryTab.TopRated
 };
 
+const moodMode: BrowseModeDefinition = {
+    mode: BrowseMode.Mood,
+    label: 'BrowseModeMood',
+    Icon: Mood,
+    iconColor: '#EC407A',
+    picker: { filter: 'Tags', tagList: MOOD_TAGS }
+};
+
+const storyThemesMode: BrowseModeDefinition = {
+    mode: BrowseMode.StoryThemes,
+    label: 'BrowseModeStoryThemes',
+    Icon: AutoStories,
+    iconColor: '#FF7043',
+    picker: { filter: 'Tags', tagList: STORY_THEME_TAGS }
+};
+
+const plotElementsMode: BrowseModeDefinition = {
+    mode: BrowseMode.PlotElements,
+    label: 'BrowseModePlotElements',
+    Icon: Timeline,
+    iconColor: '#26A69A',
+    picker: { filter: 'Tags', tagList: PLOT_ELEMENT_TAGS }
+};
+
+const worldsMode: BrowseModeDefinition = {
+    mode: BrowseMode.Worlds,
+    label: 'BrowseModeWorlds',
+    Icon: Public,
+    iconColor: '#5C6BC0',
+    picker: { filter: 'Tags', tagList: WORLD_TAGS }
+};
+
+const stylesMode: BrowseModeDefinition = {
+    mode: BrowseMode.Styles,
+    label: 'BrowseModeStyles',
+    Icon: Palette,
+    iconColor: '#7E57C2',
+    picker: { filter: 'Tags', tagList: STYLE_TAGS }
+};
+
 // The best thing you own but have not got to yet.
 const hiddenGemsMode: BrowseModeDefinition = {
     mode: BrowseMode.HiddenGems,
@@ -153,6 +200,11 @@ const movieBrowseModes: BrowseModeDefinition[] = [
     trendingMode,
     topRatedMode,
     genresMode,
+    moodMode,
+    storyThemesMode,
+    plotElementsMode,
+    worldsMode,
+    stylesMode,
     hiddenGemsMode,
     justAddedMode,
     newReleasesMode,
@@ -169,6 +221,11 @@ const tvBrowseModes: BrowseModeDefinition[] = [
     trendingMode,
     topRatedMode,
     genresMode,
+    moodMode,
+    storyThemesMode,
+    plotElementsMode,
+    worldsMode,
+    stylesMode,
     hiddenGemsMode,
     justAddedMode,
     newReleasesMode,
