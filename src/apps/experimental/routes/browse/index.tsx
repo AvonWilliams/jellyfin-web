@@ -2,15 +2,25 @@ import { BaseItemKind } from '@jellyfin/sdk/lib/generated-client/models/base-ite
 import { CollectionType } from '@jellyfin/sdk/lib/generated-client/models/collection-type';
 import Box from '@mui/material/Box';
 import ButtonBase from '@mui/material/ButtonBase';
+import FormControl from '@mui/material/FormControl';
+import IconButton from '@mui/material/IconButton';
+import MenuItem from '@mui/material/MenuItem';
+import Select, { type SelectChangeEvent } from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
+import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import React, { type FC, useCallback, useMemo, useState } from 'react';
+import Shuffle from '@mui/icons-material/Shuffle';
+import ViewModule from '@mui/icons-material/ViewModule';
+import ViewStream from '@mui/icons-material/ViewStream';
+import React, { type FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { getBrowseModes } from 'apps/experimental/features/libraries/constants/browseModes';
-import { getDecadeStyle, getRatingStyle } from 'apps/experimental/features/libraries/constants/pickTiles';
+import { getDecadeStyle, getRatingStyle, toTitleCase } from 'apps/experimental/features/libraries/constants/pickTiles';
+import TagRibbonsSection from 'apps/experimental/components/library/TagRibbonsSection';
 import Page from 'components/Page';
 import { useGetQueryFiltersLegacy } from 'hooks/useFetchItems';
+import { useApi } from 'hooks/useApi';
 import { useItem } from 'hooks/useItem';
 import globalize from 'lib/globalize';
 import type { BrowseModeDefinition } from 'types/browseMode';
@@ -128,6 +138,32 @@ const Browse: FC = () => {
     const [searchParams] = useSearchParams();
     const [activePicker, setActivePicker] = useState<BrowseModeDefinition | null>(null);
 
+    // Grid vs. ribbon view toggle, persisted across visits.
+    const [pickerView, setPickerView] = useState<'grid' | 'ribbons'>(
+        () => (localStorage.getItem('browsePickerView') as 'grid' | 'ribbons') ?? 'ribbons'
+    );
+
+    // Tag sort order for tag-based pickers.
+    type TagSort = 'random' | 'az' | 'za' | 'most' | 'fewest';
+    const [tagSort, setTagSort] = useState<TagSort>(
+        () => (localStorage.getItem('browseTagSort') as TagSort) ?? 'random'
+    );
+
+    // Per-tag item counts (fetched lazily when sorting by count).
+    const [tagCounts, setTagCounts] = useState<Record<string, number>>({});
+    const { __legacyApiClient__ } = useApi();
+
+    // Infinite scroll — grow the visible slice as the sentinel scrolls into view.
+    // Ribbons are heavier (each loads 25 items) so use a smaller batch.
+    const DISPLAY_BATCH = pickerView === 'ribbons' ? 5 : 24;
+    const [displayCount, setDisplayCount] = useState(DISPLAY_BATCH);
+    const sentinelRef = useRef<HTMLDivElement>(null);
+
+    // Reset the visible slice whenever the active picker or view mode changes.
+    useEffect(() => {
+        setDisplayCount(DISPLAY_BATCH);
+    }, [activePicker, DISPLAY_BATCH]);
+
     const libraryId = searchParams.get('topParentId');
     const collectionType = searchParams.get('collectionType') as CollectionType | null;
 
@@ -138,6 +174,61 @@ const Browse: FC = () => {
 
     const itemKind = collectionType ? ITEM_KIND_BY_COLLECTION_TYPE[collectionType] : undefined;
     const { data: filters } = useGetQueryFiltersLegacy(libraryId, itemKind ? [itemKind] : []);
+
+    // Fetch per-tag item counts when sorting by count.
+    useEffect(() => {
+        if ((tagSort !== 'most' && tagSort !== 'fewest') || activePicker?.picker?.filter !== 'Tags' || !libraryId) {
+            return;
+        }
+
+        const curated = new Set(activePicker?.picker?.tagList?.map(t => t.toLowerCase()) ?? []);
+        const available = (filters?.Tags ?? []).filter(tag => curated.has(tag.toLowerCase()));
+        if (!available.length) return;
+
+        const BATCH = 8;
+        let cancelled = false;
+        const counts: Record<string, number> = {};
+
+        const fetchBatch = async (start: number) => {
+            const batch = available.slice(start, start + BATCH);
+            const results = await Promise.allSettled(
+                batch.map(tag => {
+                    const url = __legacyApiClient__?.getUrl('Items', {
+                        Tags: tag,
+                        Limit: 0,
+                        Recursive: true,
+                        ParentId: libraryId,
+                        IncludeItemTypes: itemKind ?? undefined
+                    });
+                    return url ? __legacyApiClient__?.getJSON(url) : Promise.resolve(null);
+                })
+            );
+            results.forEach((r, i) => {
+                if (r.status === 'fulfilled' && r.value?.TotalRecordCount !== undefined) {
+                    counts[batch[i]] = r.value.TotalRecordCount;
+                }
+            });
+            if (!cancelled && start + BATCH < available.length) {
+                await fetchBatch(start + BATCH);
+            }
+        };
+
+        fetchBatch(0).then(() => {
+            if (!cancelled) setTagCounts(counts);
+        });
+
+        return () => { cancelled = true; };
+    }, [tagSort, activePicker?.picker?.filter, activePicker?.picker?.tagList, filters?.Tags, libraryId, itemKind, __legacyApiClient__]);
+
+    // Incrementing counter forces a fresh random shuffle each click.
+    const [shuffleKey, setShuffleKey] = useState(0);
+    const handleShuffle = useCallback(() => {
+        if (tagSort !== 'random') {
+            setTagSort('random');
+            localStorage.setItem('browseTagSort', 'random');
+        }
+        setShuffleKey(k => k + 1);
+    }, [tagSort]);
 
     const pickOptions = useMemo(() => {
         if (activePicker?.picker?.filter === 'Years') {
@@ -163,8 +254,58 @@ const Browse: FC = () => {
                 .map(rating => ({ label: rating, value: rating, ...getRatingStyle(rating) }));
         }
 
+        if (activePicker?.picker?.filter === 'Tags' && activePicker.picker.tagList) {
+            const curated = new Set(activePicker.picker.tagList.map(t => t.toLowerCase()));
+            const available = (filters?.Tags ?? [])
+                .filter(tag => curated.has(tag.toLowerCase()));
+
+            let sorted = available;
+
+            if (tagSort === 'az') {
+                sorted = [...available].sort((a, b) => a.localeCompare(b));
+            } else if (tagSort === 'za') {
+                sorted = [...available].sort((a, b) => b.localeCompare(a));
+            } else if (tagSort === 'most') {
+                sorted = [...available].sort((a, b) => (tagCounts[b] ?? 0) - (tagCounts[a] ?? 0));
+            } else if (tagSort === 'fewest') {
+                sorted = [...available].sort((a, b) => (tagCounts[a] ?? 0) - (tagCounts[b] ?? 0));
+            } else {
+                // 'random' — stable shuffle within this picker session.
+                const shuffled = [...available];
+                for (let i = shuffled.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+                }
+                sorted = shuffled;
+            }
+
+            return sorted.map(tag => ({
+                label: toTitleCase(tag),
+                value: tag,
+                Icon: activePicker.Icon,
+                iconColor: activePicker.iconColor
+            }));
+        }
+
         return [];
-    }, [activePicker, filters?.Years, filters?.OfficialRatings]);
+    }, [activePicker, filters?.Years, filters?.OfficialRatings, filters?.Tags, tagSort, tagCounts, shuffleKey]);
+
+    // Grow the visible slice when the sentinel scrolls into view.
+    useEffect(() => {
+        const sentinel = sentinelRef.current;
+        if (!sentinel || !activePicker) return;
+
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    setDisplayCount(prev => prev + DISPLAY_BATCH);
+                }
+            },
+            { rootMargin: '400px' }
+        );
+        observer.observe(sentinel);
+        return () => observer.disconnect();
+    }, [activePicker, displayCount]);
 
     const goToLibrary = useCallback((search: string) => {
         if (!libraryPath || !libraryId) {
@@ -204,6 +345,21 @@ const Browse: FC = () => {
         goToLibrary(`browseMode=${activePicker.mode}&pick=${encodeURIComponent(value)}`);
     }, [goToLibrary, activePicker]);
 
+    const isTagPicker = activePicker?.picker?.filter === 'Tags';
+    const togglePickerView = useCallback(() => {
+        setPickerView(prev => {
+            const next = prev === 'ribbons' ? 'grid' : 'ribbons';
+            localStorage.setItem('browsePickerView', next);
+            return next;
+        });
+    }, []);
+
+    const handleSortChange = useCallback((e: SelectChangeEvent<string>) => {
+        const value = e.target.value as TagSort;
+        setTagSort(value);
+        localStorage.setItem('browseTagSort', value);
+    }, []);
+
     return (
         <Page
             id='browseModesPage'
@@ -218,21 +374,73 @@ const Browse: FC = () => {
 
                     {activePicker ? (
                         <>
-                            <Typography variant='h2'>
-                                {globalize.translate(activePicker.label)}
-                            </Typography>
-                            <TileGrid>
-                                {pickOptions.map(option => (
-                                    <PickTile
-                                        key={option.value}
-                                        label={option.label}
-                                        value={option.value}
-                                        Icon={option.Icon}
-                                        iconColor={option.iconColor}
-                                        onSelect={onPickClick}
-                                    />
-                                ))}
-                            </TileGrid>
+                            <Stack direction='row' alignItems='center' gap={1}>
+                                <Typography variant='h2' sx={{ flexGrow: 1 }}>
+                                    {globalize.translate(activePicker.label)}
+                                </Typography>
+                                {isTagPicker && (
+                                    <>
+                                        <Tooltip title='Shuffle tags'>
+                                            <IconButton onClick={handleShuffle} size='small'>
+                                                <Shuffle fontSize='small' />
+                                            </IconButton>
+                                        </Tooltip>
+                                        <FormControl size='small' sx={{ minWidth: 130 }}>
+                                            <Select
+                                                value={tagSort}
+                                                onChange={handleSortChange}
+                                                inputProps={{ 'aria-label': 'Sort order' }}
+                                            >
+                                                <MenuItem value='random'>Random</MenuItem>
+                                                <MenuItem value='az'>A — Z</MenuItem>
+                                                <MenuItem value='za'>Z — A</MenuItem>
+                                                <MenuItem value='most'>Most items</MenuItem>
+                                                <MenuItem value='fewest'>Fewest items</MenuItem>
+                                            </Select>
+                                        </FormControl>
+                                        <Tooltip title={pickerView === 'ribbons' ? 'Switch to grid' : 'Switch to shelves'}>
+                                            <IconButton onClick={togglePickerView} size='small'>
+                                                {pickerView === 'ribbons' ? <ViewModule fontSize='small' /> : <ViewStream fontSize='small' />}
+                                            </IconButton>
+                                        </Tooltip>
+                                    </>
+                                )}
+                            </Stack>
+
+                            {isTagPicker && pickerView === 'ribbons' ? (
+                                <Stack spacing={2}>
+                                    {pickOptions.slice(0, displayCount).map(option => (
+                                        <TagRibbonsSection
+                                            key={option.value}
+                                            tagName={option.value}
+                                            parentId={libraryId ?? ''}
+                                            collectionType={collectionType ?? undefined}
+                                            itemType={itemKind ? [itemKind] : []}
+                                        />
+                                    ))}
+                                    {displayCount < pickOptions.length && (
+                                        <Box ref={sentinelRef} sx={{ height: 1 }} />
+                                    )}
+                                </Stack>
+                            ) : (
+                                <>
+                                    <TileGrid>
+                                        {pickOptions.slice(0, displayCount).map(option => (
+                                            <PickTile
+                                                key={option.value}
+                                                label={option.label}
+                                                value={option.value}
+                                                Icon={option.Icon}
+                                                iconColor={option.iconColor}
+                                                onSelect={onPickClick}
+                                            />
+                                        ))}
+                                    </TileGrid>
+                                    {displayCount < pickOptions.length && (
+                                        <Box ref={sentinelRef} sx={{ height: 1 }} />
+                                    )}
+                                </>
+                            )}
                         </>
                     ) : (
                         <TileGrid>

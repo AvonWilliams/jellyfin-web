@@ -64,4 +64,6 @@ export interface LibraryViewSettings {
     Filters?: Filters;
     Alphabet?: string | null;
     MinPremiereDate?: string;
+    /** ISO date — only show items added to the library on or after this date. */
+    MinDateLastSaved?: string;
 }

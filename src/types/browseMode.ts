@@ -19,7 +19,12 @@ export enum BrowseMode {
     WatchAgain = 'watchAgain',
     Decades = 'decades',
     AgeRating = 'agerating',
-    Trending = 'trending'
+    Trending = 'trending',
+    Mood = 'mood',
+    StoryThemes = 'storythemes',
+    PlotElements = 'plotelements',
+    Worlds = 'worlds',
+    Styles = 'styles'
 }
 
 /**
@@ -27,7 +32,9 @@ export enum BrowseMode {
  * travel in the `pick` search param and end up in the named filter.
  */
 export interface BrowsePicker {
-    filter: 'Years' | 'OfficialRatings';
+    filter: 'Years' | 'OfficialRatings' | 'Tags';
+    /** Curated tag list to intersect against the library's available tags. */
+    tagList?: readonly string[];
 }
 
 export interface BrowseModeDefinition {

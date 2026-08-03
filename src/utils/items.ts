@@ -139,7 +139,8 @@ export const getFiltersQuery = (
         tags: libraryViewSettings?.Filters?.Tags,
         years: libraryViewSettings?.Filters?.Years,
         studioIds: libraryViewSettings?.Filters?.StudioIds,
-        minPremiereDate: libraryViewSettings?.MinPremiereDate
+        minPremiereDate: libraryViewSettings?.MinPremiereDate,
+        minDateLastSaved: libraryViewSettings?.MinDateLastSaved
     };
 };
 

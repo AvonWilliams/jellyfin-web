@@ -84,6 +84,17 @@ const RATING_AGES: ReadonlyArray<readonly [number, PickTileStyle]> = [
     [0, RATING_LEVELS.everyone]
 ];
 
+/**
+ * Capitalises each word in a tag name for display, handling hyphens as word boundaries.
+ * "new york city" → "New York City", "post-apocalyptic" → "Post-Apocalyptic".
+ */
+export const toTitleCase = (str: string): string =>
+    str.split(/(\s|-)/g).map(part =>
+        part.length > 0 && part !== ' ' && part !== '-' ?
+            part.charAt(0).toUpperCase() + part.slice(1) :
+            part
+    ).join('');
+
 export const getRatingStyle = (rating: string): PickTileStyle => {
     const normalized = rating.trim().toUpperCase().replace(/^(?!TV-)[A-Z]{2}-/, '');
 
