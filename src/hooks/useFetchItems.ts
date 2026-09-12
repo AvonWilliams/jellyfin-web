@@ -210,7 +210,7 @@ const fetchDiscoverList = (
                 userId,
                 parentId: parentId ?? undefined,
                 fields: ItemFields.PrimaryImageAspectRatio,
-                limit: 48
+                limit: 500
             },
             headers: { Authorization: api.authorizationHeader },
             signal: options?.signal
