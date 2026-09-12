@@ -53,7 +53,7 @@ const justAddedMode: BrowseModeDefinition = {
     Icon: FiberNew,
     iconColor: '#4DD0C4',
     settings: {
-        SortBy: ItemSortBy.DateCreated,
+        SortBy: [ItemSortBy.DateCreated],
         SortOrder: SortOrder.Descending,
         MinDateLastSaved: monthsAgo(9)
     }
@@ -65,7 +65,7 @@ const newReleasesMode: BrowseModeDefinition = {
     Icon: NewReleases,
     iconColor: '#6FB3E0',
     settings: {
-        SortBy: ItemSortBy.PremiereDate,
+        SortBy: [ItemSortBy.PremiereDate],
         SortOrder: SortOrder.Descending,
         MinPremiereDate: monthsAgo(9)
     }
@@ -77,7 +77,7 @@ const randomMode: BrowseModeDefinition = {
     Icon: Shuffle,
     iconColor: '#F08A5D',
     settings: {
-        SortBy: ItemSortBy.Random,
+        SortBy: [ItemSortBy.Random],
         SortOrder: SortOrder.Ascending
     }
 };
@@ -118,7 +118,7 @@ const criticsPicksMode: BrowseModeDefinition = {
     Icon: Reviews,
     iconColor: '#E0533D',
     settings: {
-        SortBy: ItemSortBy.CriticRating,
+        SortBy: [ItemSortBy.CriticRating],
         SortOrder: SortOrder.Descending
     }
 };
@@ -129,7 +129,7 @@ const watchAgainMode: BrowseModeDefinition = {
     Icon: History,
     iconColor: '#86C98B',
     settings: {
-        SortBy: ItemSortBy.DatePlayed,
+        SortBy: [ItemSortBy.DatePlayed],
         SortOrder: SortOrder.Descending
     }
 };
@@ -198,7 +198,7 @@ const hiddenGemsMode: BrowseModeDefinition = {
     iconColor: '#F2C14E',
     settings: {
         Filters: { Status: [ItemFilter.IsUnplayed] },
-        SortBy: ItemSortBy.CommunityRating,
+        SortBy: [ItemSortBy.CommunityRating],
         SortOrder: SortOrder.Descending
     }
 };
