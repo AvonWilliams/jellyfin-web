@@ -65,4 +65,8 @@ export interface LibraryViewSettings {
     ShowYear?: boolean;
     Filters?: Filters;
     Alphabet?: string | null;
+    /** ISO date — only show items released on or after this date. */
+    MinPremiereDate?: string;
+    /** ISO date — only show items added to the library on or after this date. */
+    MinDateLastSaved?: string;
 }
