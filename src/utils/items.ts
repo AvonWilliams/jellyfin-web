@@ -152,7 +152,9 @@ export const getFiltersQuery = (
         years: libraryViewSettings?.Filters?.Years,
         studioIds: libraryViewSettings?.Filters?.StudioIds,
         audioLanguages: libraryViewSettings?.Filters?.AudioLanguages,
-        subtitleLanguages: libraryViewSettings?.Filters?.SubtitleLanguages
+        subtitleLanguages: libraryViewSettings?.Filters?.SubtitleLanguages,
+        minPremiereDate: libraryViewSettings?.MinPremiereDate,
+        minDateLastSaved: libraryViewSettings?.MinDateLastSaved
     };
 };
 
