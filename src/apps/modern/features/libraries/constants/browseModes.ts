@@ -26,6 +26,12 @@ import { LibraryTab } from 'types/libraryTab';
 
 import { MOOD_TAGS, PLOT_ELEMENT_TAGS, STORY_THEME_TAGS, STYLE_TAGS, WORLD_TAGS } from './browseTags';
 
+const monthsAgo = (n: number) => {
+    const d = new Date();
+    d.setMonth(d.getMonth() - n);
+    return d.toISOString();
+};
+
 const allMode: BrowseModeDefinition = {
     mode: BrowseMode.All,
     label: 'BrowseModeAll',
@@ -48,7 +54,8 @@ const justAddedMode: BrowseModeDefinition = {
     iconColor: '#4DD0C4',
     settings: {
         SortBy: ItemSortBy.DateCreated,
-        SortOrder: SortOrder.Descending
+        SortOrder: SortOrder.Descending,
+        MinDateLastSaved: monthsAgo(9)
     }
 };
 
@@ -59,7 +66,8 @@ const newReleasesMode: BrowseModeDefinition = {
     iconColor: '#6FB3E0',
     settings: {
         SortBy: ItemSortBy.PremiereDate,
-        SortOrder: SortOrder.Descending
+        SortOrder: SortOrder.Descending,
+        MinPremiereDate: monthsAgo(9)
     }
 };
 
