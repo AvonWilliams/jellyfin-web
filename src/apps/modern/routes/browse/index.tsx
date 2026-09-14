@@ -15,7 +15,7 @@ import ViewStream from '@mui/icons-material/ViewStream';
 import React, { type FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
-import { getBrowseModes } from 'apps/modern/features/libraries/constants/browseModes';
+import { applyBrowseModeOrder, getBrowseModes } from 'apps/modern/features/libraries/constants/browseModes';
 import { getDecadeStyle, getRatingStyle, toTitleCase } from 'apps/modern/features/libraries/constants/pickTiles';
 import TagRibbonsSection from 'apps/modern/features/libraries/components/TagRibbonsSection';
 import { LibraryRoutes } from 'apps/modern/features/libraries/constants/libraryRoutes';
@@ -127,7 +127,7 @@ const Browse: FC = () => {
 
     // Per-tag item counts (fetched lazily when sorting by count).
     const [tagCounts, setTagCounts] = useState<Record<string, number>>({});
-    const { __legacyApiClient__ } = useApi();
+    const { __legacyApiClient__, api } = useApi();
 
     // Infinite scroll — grow the visible slice as the sentinel scrolls into view.
     // Ribbons are heavier (each loads 25 items) so use a smaller batch.
@@ -144,7 +144,24 @@ const Browse: FC = () => {
     const collectionType = searchParams.get('collectionType') as CollectionType | null;
 
     const { data: library } = useItem(libraryId ?? undefined);
-    const browseModes = getBrowseModes(collectionType);
+
+    // The administrator's tile order and visibility, fetched from the plugin. An empty or
+    // missing layout falls back to the built-in order with every mode shown.
+    const [tileLayout, setTileLayout] = useState<string[]>();
+    useEffect(() => {
+        if (!api) return;
+        api.axiosInstance
+            .get<string[]>(`${api.basePath}/Discover/TileLayout`, {
+                headers: { Authorization: api.authorizationHeader }
+            })
+            .then(({ data }) => setTileLayout(data))
+            .catch(() => setTileLayout(undefined));
+    }, [api]);
+
+    const browseModes = useMemo(
+        () => applyBrowseModeOrder(getBrowseModes(collectionType) ?? [], tileLayout),
+        [collectionType, tileLayout]
+    );
 
     const libraryPath = useMemo(
         () => LibraryRoutes.find(route => route.type === collectionType)?.path,

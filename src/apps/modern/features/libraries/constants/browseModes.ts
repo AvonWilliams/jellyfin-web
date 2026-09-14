@@ -260,3 +260,22 @@ export const getBrowseModes = (collectionType?: CollectionType | null) => (
 export const getBrowseMode = (collectionType: CollectionType | null | undefined, mode: string | null) => (
     mode ? getBrowseModes(collectionType)?.find(definition => definition.mode === mode) : undefined
 );
+
+/**
+ * Reorders and filters the default modes to match a server-provided tile layout. Keys absent
+ * from the layout are hidden; keys the layout mentions that this collection type does not offer
+ * are skipped. An empty layout leaves the built-in order and visibility untouched.
+ */
+export const applyBrowseModeOrder = (
+    modes: BrowseModeDefinition[],
+    order?: string[] | null
+): BrowseModeDefinition[] => {
+    if (!order?.length) {
+        return modes;
+    }
+
+    const byKey = new Map(modes.map(definition => [definition.mode, definition]));
+    return order
+        .map(key => byKey.get(key as BrowseMode))
+        .filter((definition): definition is BrowseModeDefinition => Boolean(definition));
+};
