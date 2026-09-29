@@ -32,7 +32,7 @@ export enum BrowseMode {
  * travel in the `pick` search param and end up in the named filter.
  */
 export interface BrowsePicker {
-    filter: 'Years' | 'OfficialRatings' | 'Tags';
+    filter: 'Years' | 'OfficialRatings' | 'Tags' | 'Genres' | 'Studios';
     /** Curated tag list to intersect against the library's available tags. */
     tagList?: readonly string[];
 }
