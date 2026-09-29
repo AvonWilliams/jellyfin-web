@@ -40,6 +40,37 @@ const COUNT_TYPE_BY_FILTER: Record<string, string> = {
 /** In-memory cache of picker counts, keyed by (libraryId, type). */
 const pickerCountsCache = new Map<string, Record<string, number>>();
 
+/** Builds picker tiles from label → value pairs, sharing the active picker's icon. */
+const buildNamedOptions = (
+    activePicker: BrowseModeDefinition,
+    entries: { label: string; value: string }[]
+) => entries.map(entry => ({
+    ...entry,
+    Icon: activePicker.Icon,
+    iconColor: activePicker.iconColor
+}));
+
+/** Builds genre tiles from a plain list of names. */
+const buildGenreOptions = (genres: string[] | null | undefined, activePicker: BrowseModeDefinition) => {
+    const entries = (genres ?? [])
+        .slice()
+        .sort((a, b) => a.localeCompare(b))
+        .map(genre => ({ label: genre, value: genre }));
+    return buildNamedOptions(activePicker, entries);
+};
+
+/** Builds studio tiles from studio entities, narrowing by id. */
+const buildStudioOptions = (
+    studios: { Name?: string | null; Id?: string | null }[] | undefined,
+    activePicker: BrowseModeDefinition
+) => {
+    const entries = (studios ?? [])
+        .slice()
+        .sort((a, b) => (a.Name ?? '').localeCompare(b.Name ?? ''))
+        .map(studio => ({ label: studio.Name ?? '', value: studio.Id ?? '' }));
+    return buildNamedOptions(activePicker, entries);
+};
+
 /** Item kinds whose production years decide which decades are worth offering. */
 const ITEM_KIND_BY_COLLECTION_TYPE: Partial<Record<CollectionType, BaseItemKind>> = {
     [CollectionType.Movies]: BaseItemKind.Movie,
@@ -268,7 +299,9 @@ const Browse: FC = () => {
                 if (!cancelled) setPickerCounts({});
             });
 
-        return () => { cancelled = true; };
+        return () => {
+            cancelled = true;
+        };
     }, [api, libraryId, itemKind, activePicker?.picker?.filter]);
 
     // Incrementing counter forces a fresh random shuffle each click.
@@ -308,27 +341,11 @@ const Browse: FC = () => {
         }
 
         if (activePicker?.picker?.filter === 'Genres') {
-            return (filters?.Genres ?? [])
-                .slice()
-                .sort((a, b) => a.localeCompare(b))
-                .map(genre => ({
-                    label: genre,
-                    value: genre,
-                    Icon: activePicker.Icon,
-                    iconColor: activePicker.iconColor
-                }));
+            return buildGenreOptions(filters?.Genres, activePicker);
         }
 
         if (activePicker?.picker?.filter === 'Studios') {
-            return (studios ?? [])
-                .slice()
-                .sort((a, b) => (a.Name ?? '').localeCompare(b.Name ?? ''))
-                .map(studio => ({
-                    label: studio.Name ?? '',
-                    value: studio.Id,
-                    Icon: activePicker.Icon,
-                    iconColor: activePicker.iconColor
-                }));
+            return buildStudioOptions(studios, activePicker);
         }
 
         if (activePicker?.picker?.filter === 'Tags' && activePicker.picker.tagList) {
