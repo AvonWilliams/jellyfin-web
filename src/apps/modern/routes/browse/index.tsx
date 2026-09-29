@@ -20,7 +20,7 @@ import { getDecadeStyle, getRatingStyle, toTitleCase } from 'apps/modern/feature
 import TagRibbonsSection from 'apps/modern/features/libraries/components/TagRibbonsSection';
 import { LibraryRoutes } from 'apps/modern/features/libraries/constants/libraryRoutes';
 import Page from 'components/Page';
-import { useGetQueryFiltersLegacy } from 'hooks/useFetchItems';
+import { useGetQueryFiltersLegacy, useGetStudios } from 'hooks/useFetchItems';
 import { useApi } from 'hooks/useApi';
 import { useItem } from 'hooks/useItem';
 import globalize from 'lib/globalize';
@@ -32,6 +32,8 @@ const DECADE_LENGTH = 10;
 const COUNT_TYPE_BY_FILTER: Record<string, string> = {
     Years: 'decade',
     OfficialRatings: 'rating',
+    Genres: 'genre',
+    Studios: 'studio',
     Tags: 'tag'
 };
 
@@ -190,6 +192,7 @@ const Browse: FC = () => {
 
     const itemKind = collectionType ? ITEM_KIND_BY_COLLECTION_TYPE[collectionType] : undefined;
     const { data: filters } = useGetQueryFiltersLegacy(libraryId, itemKind ? [itemKind] : []);
+    const { data: studios } = useGetStudios(libraryId, itemKind ? [itemKind] : []);
 
     // Fetch per-tag item counts when sorting by count.
     useEffect(() => {
@@ -304,6 +307,30 @@ const Browse: FC = () => {
                 .map(rating => ({ label: rating, value: rating, ...getRatingStyle(rating) }));
         }
 
+        if (activePicker?.picker?.filter === 'Genres') {
+            return (filters?.Genres ?? [])
+                .slice()
+                .sort((a, b) => a.localeCompare(b))
+                .map(genre => ({
+                    label: genre,
+                    value: genre,
+                    Icon: activePicker.Icon,
+                    iconColor: activePicker.iconColor
+                }));
+        }
+
+        if (activePicker?.picker?.filter === 'Studios') {
+            return (studios ?? [])
+                .slice()
+                .sort((a, b) => (a.Name ?? '').localeCompare(b.Name ?? ''))
+                .map(studio => ({
+                    label: studio.Name ?? '',
+                    value: studio.Id,
+                    Icon: activePicker.Icon,
+                    iconColor: activePicker.iconColor
+                }));
+        }
+
         if (activePicker?.picker?.filter === 'Tags' && activePicker.picker.tagList) {
             const curated = new Set(activePicker.picker.tagList.map(t => t.toLowerCase()));
             const available = (filters?.Tags ?? [])
@@ -338,7 +365,7 @@ const Browse: FC = () => {
         }
 
         return [];
-    }, [activePicker, filters?.Years, filters?.OfficialRatings, filters?.Tags, tagSort, tagCounts, shuffleKey]);
+    }, [activePicker, filters?.Years, filters?.OfficialRatings, filters?.Genres, studios, filters?.Tags, tagSort, tagCounts, shuffleKey]);
 
     // Grow the visible slice when the sentinel scrolls into view.
     useEffect(() => {

@@ -65,11 +65,14 @@ export const LibraryProvider: FC<PropsWithChildren<unknown>> = ({ children }) =>
             values.map(value => parseInt(value, 10)).filter(value => !isNaN(value)) :
             values;
 
+        // The Studios picker narrows by id, so map its friendly name to the filters key.
+        const filterKey = definition.picker.filter === 'Studios' ? 'StudioIds' : definition.picker.filter;
+
         return {
             ...definition.settings,
             Filters: {
                 ...definition.settings?.Filters,
-                [definition.picker.filter]: filterValue
+                [filterKey]: filterValue
             }
         };
     }, [collectionType, browseMode, browsePick]);

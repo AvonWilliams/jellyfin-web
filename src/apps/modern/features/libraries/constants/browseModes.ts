@@ -44,7 +44,7 @@ const genresMode: BrowseModeDefinition = {
     label: 'Genres',
     Icon: Category,
     iconColor: '#C07CD6',
-    view: LibraryTab.Genres
+    picker: { filter: 'Genres' }
 };
 
 const justAddedMode: BrowseModeDefinition = {
@@ -103,7 +103,7 @@ const studiosMode: BrowseModeDefinition = {
     label: 'Studios',
     Icon: Business,
     iconColor: '#8D9EC6',
-    view: LibraryTab.Studios
+    picker: { filter: 'Studios' }
 };
 
 const networksMode: BrowseModeDefinition = {
