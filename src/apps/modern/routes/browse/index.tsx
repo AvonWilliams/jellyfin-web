@@ -166,7 +166,7 @@ const Browse: FC = () => {
 
     // Grid vs. ribbon view toggle, persisted across visits.
     const [pickerView, setPickerView] = useState<'grid' | 'ribbons'>(
-        () => (localStorage.getItem('browsePickerView') as 'grid' | 'ribbons') ?? 'ribbons'
+        () => (localStorage.getItem('browsePickerView') as 'grid' | 'ribbons') ?? 'grid'
     );
 
     // Tag sort order for tag-based pickers.
