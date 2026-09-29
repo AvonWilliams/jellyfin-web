@@ -28,6 +28,16 @@ import type { BrowseModeDefinition } from 'types/browseMode';
 
 const DECADE_LENGTH = 10;
 
+/** Maps a picker's filter kind to the server's /Discover/Counts type. */
+const COUNT_TYPE_BY_FILTER: Record<string, string> = {
+    Years: 'decade',
+    OfficialRatings: 'rating',
+    Tags: 'tag'
+};
+
+/** In-memory cache of picker counts, keyed by (libraryId, type). */
+const pickerCountsCache = new Map<string, Record<string, number>>();
+
 /** Item kinds whose production years decide which decades are worth offering. */
 const ITEM_KIND_BY_COLLECTION_TYPE: Partial<Record<CollectionType, BaseItemKind>> = {
     [CollectionType.Movies]: BaseItemKind.Movie,
@@ -38,10 +48,11 @@ interface TileProps {
     label: string;
     Icon?: BrowseModeDefinition['Icon'];
     iconColor?: string;
+    count?: number;
     onClick: () => void;
 }
 
-const Tile: FC<TileProps> = ({ label, Icon, iconColor, onClick }) => (
+const Tile: FC<TileProps> = ({ label, Icon, iconColor, count, onClick }) => (
     <ButtonBase
         onClick={onClick}
         focusRipple
@@ -66,6 +77,11 @@ const Tile: FC<TileProps> = ({ label, Icon, iconColor, onClick }) => (
         <Typography variant='subtitle1' sx={{ textAlign: 'center', lineHeight: 1.2 }}>
             {label}
         </Typography>
+        {count !== undefined ? (
+            <Typography variant='body2' sx={{ color: 'text.secondary', textAlign: 'center', lineHeight: 1 }}>
+                {count}
+            </Typography>
+        ) : null}
     </ButtonBase>
 );
 
@@ -90,11 +106,12 @@ const PickTile: FC<{
     value: string;
     Icon?: BrowseModeDefinition['Icon'];
     iconColor?: string;
+    count?: number;
     onSelect: (value: string) => void;
-}> = ({ label, value, Icon, iconColor, onSelect }) => {
+}> = ({ label, value, Icon, iconColor, count, onSelect }) => {
     const onClick = useCallback(() => onSelect(value), [onSelect, value]);
 
-    return <Tile label={label} Icon={Icon} iconColor={iconColor} onClick={onClick} />;
+    return <Tile label={label} Icon={Icon} iconColor={iconColor} count={count} onClick={onClick} />;
 };
 
 const TileGrid: FC<{ children: React.ReactNode }> = ({ children }) => (
@@ -128,6 +145,9 @@ const Browse: FC = () => {
     // Per-tag item counts (fetched lazily when sorting by count).
     const [tagCounts, setTagCounts] = useState<Record<string, number>>({});
     const { __legacyApiClient__, api } = useApi();
+
+    // Picker value counts from the plugin's /Discover/Counts endpoint, shown as tile badges.
+    const [pickerCounts, setPickerCounts] = useState<Record<string, number>>({});
 
     // Infinite scroll — grow the visible slice as the sentinel scrolls into view.
     // Ribbons are heavier (each loads 25 items) so use a smaller batch.
@@ -215,6 +235,38 @@ const Browse: FC = () => {
 
         return () => { cancelled = true; };
     }, [tagSort, activePicker?.picker?.filter, activePicker?.picker?.tagList, filters?.Tags, libraryId, itemKind, __legacyApiClient__]);
+
+    // Fetch picker value counts from the plugin (cached in memory), shown as tile badges.
+    useEffect(() => {
+        const type = activePicker?.picker?.filter ? COUNT_TYPE_BY_FILTER[activePicker.picker.filter] : undefined;
+        if (!type || !api || !libraryId) {
+            setPickerCounts({});
+            return;
+        }
+
+        const cacheKey = `${libraryId}:${type}`;
+        const cached = pickerCountsCache.get(cacheKey);
+        if (cached) {
+            setPickerCounts(cached);
+            return;
+        }
+
+        let cancelled = false;
+        api.axiosInstance
+            .get<Record<string, number>>(`${api.basePath}/Discover/Counts`, {
+                params: { type, parentId: libraryId, itemTypes: itemKind },
+                headers: { Authorization: api.authorizationHeader }
+            })
+            .then(({ data }) => {
+                pickerCountsCache.set(cacheKey, data);
+                if (!cancelled) setPickerCounts(data);
+            })
+            .catch(() => {
+                if (!cancelled) setPickerCounts({});
+            });
+
+        return () => { cancelled = true; };
+    }, [api, libraryId, itemKind, activePicker?.picker?.filter]);
 
     // Incrementing counter forces a fresh random shuffle each click.
     const [shuffleKey, setShuffleKey] = useState(0);
@@ -432,6 +484,7 @@ const Browse: FC = () => {
                                                 value={option.value}
                                                 Icon={option.Icon}
                                                 iconColor={option.iconColor}
+                                                count={pickerCounts[option.value] ?? pickerCounts[option.label]}
                                                 onSelect={onPickClick}
                                             />
                                         ))}
