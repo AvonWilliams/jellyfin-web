@@ -187,6 +187,42 @@ const PrimaryTileGrid: FC<{ children: React.ReactNode }> = ({ children }) => (
     </Box>
 );
 
+/** Compact inline text links for a meta category with a small fixed set of leaf children. */
+const InlineModeLinks: FC<{
+    definition: BrowseModeDefinition;
+    children: BrowseModeDefinition[];
+    onSelect: (definition: BrowseModeDefinition) => void;
+}> = ({ definition, children, onSelect }) => (
+    <Stack spacing={1}>
+        <Typography variant='h3'>
+            {globalize.translate(definition.label)}
+        </Typography>
+        <Stack direction='row' spacing={1.5} flexWrap='wrap'>
+            {children.map(child => (
+                <ButtonBase
+                    key={child.mode}
+                    onClick={() => onSelect(child)}
+                    focusRipple
+                    sx={{
+                        px: 1.5,
+                        py: 0.5,
+                        borderRadius: 2,
+                        color: 'primary.main',
+                        '&:hover, &:focus-visible': {
+                            backgroundColor: 'action.hover',
+                            textDecoration: 'underline'
+                        }
+                    }}
+                >
+                    <Typography variant='body1' sx={{ color: 'inherit' }}>
+                        {globalize.translate(child.label)}
+                    </Typography>
+                </ButtonBase>
+            ))}
+        </Stack>
+    </Stack>
+);
+
 /** Lists the library's people of one kind (Actor/Director/Writer) as clickable person cards. */
 const PeopleCards: FC<{ parentId?: string; personType?: PersonKind }> = ({ parentId, personType }) => {
     const containerRef = useRef<HTMLDivElement>(null);
@@ -726,14 +762,30 @@ const Browse: FC = () => {
                 <Typography variant='h2' sx={{ textAlign: 'center', textShadow: '0 2px 6px rgba(0, 0, 0, 0.8)' }}>
                     {globalize.translate('BrowseModeSectionBrowseBy')}
                 </Typography>
+                <Stack spacing={1.5}>
+                    {metaModes
+                        .filter(definition => definition.inline)
+                        .map(definition => (
+                            <InlineModeLinks
+                                key={definition.mode}
+                                definition={definition}
+                                children={(definition.children ?? [])
+                                    .map(child => getBrowseMode(collectionType, child))
+                                    .filter((child): child is BrowseModeDefinition => Boolean(child))}
+                                onSelect={openLeaf}
+                            />
+                        ))}
+                </Stack>
                 <TileGrid>
-                    {metaModes.map(definition => (
-                        <BrowseModeTile
-                            key={definition.mode}
-                            definition={definition}
-                            onSelect={onModeClick}
-                        />
-                    ))}
+                    {metaModes
+                        .filter(definition => !definition.inline)
+                        .map(definition => (
+                            <BrowseModeTile
+                                key={definition.mode}
+                                definition={definition}
+                                onSelect={onModeClick}
+                            />
+                        ))}
                 </TileGrid>
             </>
         );
