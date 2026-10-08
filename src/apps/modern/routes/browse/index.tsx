@@ -119,10 +119,12 @@ const Tile: FC<TileProps> = ({ label, Icon, iconColor, iconSize, labelSize, coun
             aspectRatio: '16 / 9',
             padding: 2,
             borderRadius: 2,
-            backgroundColor: 'rgba(52, 52, 52, 0.79)',
+            backgroundColor: 'rgba(20, 20, 20, 0.7)',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
             transition: 'background-color 120ms ease, transform 120ms ease',
             '&:hover, &:focus-visible': {
-                backgroundColor: 'rgba(52, 52, 52, 0.88)',
+                backgroundColor: 'rgba(20, 20, 20, 0.85)',
                 transform: 'scale(1.03)'
             }
         }}
