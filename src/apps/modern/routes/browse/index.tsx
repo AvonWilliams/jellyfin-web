@@ -103,11 +103,11 @@ const Tile: FC<TileProps> = ({ label, Icon, iconColor, iconSize, count, onClick 
             width: '100%',
             aspectRatio: '16 / 9',
             padding: 2,
-            borderRadius: 1,
-            backgroundColor: 'rgba(0, 0, 0, 0.66)',
+            borderRadius: 2,
+            backgroundColor: 'rgba(0, 0, 0, 0.88)',
             transition: 'background-color 120ms ease, transform 120ms ease',
             '&:hover, &:focus-visible': {
-                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                backgroundColor: 'rgba(0, 0, 0, 0.95)',
                 transform: 'scale(1.03)'
             }
         }}
@@ -701,7 +701,7 @@ const Browse: FC = () => {
                             key={definition.mode}
                             definition={definition}
                             onSelect={onModeClick}
-                            iconSize='3rem'
+                            iconSize='3.5rem'
                         />
                     ))}
                 </PrimaryTileGrid>
