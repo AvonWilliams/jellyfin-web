@@ -44,7 +44,10 @@ const HEADING_BAR = {
     textAlign: 'center',
     padding: '0.5em 0.75em',
     borderRadius: 2,
-    backgroundColor: 'rgba(24, 24, 24, 0.8)'
+    backgroundColor: 'rgba(24, 24, 24, 0.45)',
+    backdropFilter: 'blur(12px)',
+    borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+    borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
 } as const;
 
 /** Maps a picker's filter kind to the server's /Discover/Counts type. */
