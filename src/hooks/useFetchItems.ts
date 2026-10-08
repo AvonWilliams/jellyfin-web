@@ -110,6 +110,41 @@ export const useGetStudios = (parentId: ParentId, itemType: BaseItemKind[]) => {
     });
 };
 
+const fetchGetPersons = async (
+    currentApi: JellyfinApiContext,
+    parentId: ParentId,
+    personType: PersonKind,
+    options?: AxiosRequestConfig
+) => {
+    const { api, user } = currentApi;
+    if (api && user?.Id) {
+        const response = await getPersonApi(api).getPersons(
+            {
+                userId: user.Id,
+                parentId: parentId ?? undefined,
+                personTypes: [personType],
+                fields: [ItemFields.PrimaryImageAspectRatio],
+                enableImageTypes: [ImageType.Primary],
+                limit: 500
+            },
+            {
+                signal: options?.signal
+            }
+        );
+        return response.data.Items;
+    }
+};
+
+export const useGetPersons = (parentId: ParentId, personType?: PersonKind) => {
+    const currentApi = useApi();
+    return useQuery({
+        queryKey: ['Persons', parentId, personType],
+        queryFn: ({ signal }) =>
+            fetchGetPersons(currentApi, parentId, personType!, { signal }),
+        enabled: !!currentApi.api && !!currentApi.user?.Id && !!parentId && !!personType
+    });
+};
+
 const fetchGetQueryFiltersLegacy = async (
     currentApi: JellyfinApiContext,
     parentId: ParentId,
