@@ -2,6 +2,7 @@ import { BaseItemKind } from '@jellyfin/sdk/lib/generated-client/models/base-ite
 import { CollectionType } from '@jellyfin/sdk/lib/generated-client/models/collection-type';
 import Box from '@mui/material/Box';
 import ButtonBase from '@mui/material/ButtonBase';
+import Divider from '@mui/material/Divider';
 import FormControl from '@mui/material/FormControl';
 import IconButton from '@mui/material/IconButton';
 import MenuItem from '@mui/material/MenuItem';
@@ -9,13 +10,14 @@ import Select, { type SelectChangeEvent } from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
+import ArrowBack from '@mui/icons-material/ArrowBack';
 import Shuffle from '@mui/icons-material/Shuffle';
 import ViewModule from '@mui/icons-material/ViewModule';
 import ViewStream from '@mui/icons-material/ViewStream';
 import React, { type FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
-import { applyBrowseModeOrder, getBrowseModes } from 'apps/modern/features/libraries/constants/browseModes';
+import { applyBrowseModeOrder, getBrowseMode, getBrowseModes } from 'apps/modern/features/libraries/constants/browseModes';
 import { getDecadeStyle, getRatingStyle, toTitleCase } from 'apps/modern/features/libraries/constants/pickTiles';
 import TagRibbonsSection from 'apps/modern/features/libraries/components/TagRibbonsSection';
 import { LibraryRoutes } from 'apps/modern/features/libraries/constants/libraryRoutes';
@@ -163,6 +165,8 @@ const Browse: FC = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const [activePicker, setActivePicker] = useState<BrowseModeDefinition | null>(null);
+    // A "Browse by…" meta tile with several children, rendered as a secondary grid.
+    const [activeGroup, setActiveGroup] = useState<BrowseModeDefinition | null>(null);
 
     // Grid vs. ribbon view toggle, persisted across visits.
     const [pickerView, setPickerView] = useState<'grid' | 'ribbons'>(
@@ -214,6 +218,24 @@ const Browse: FC = () => {
     const browseModes = useMemo(
         () => applyBrowseModeOrder(getBrowseModes(collectionType) ?? [], tileLayout),
         [collectionType, tileLayout]
+    );
+
+    const primaryModes = useMemo(
+        () => browseModes.filter(definition => definition.tier === 'primary'),
+        [browseModes]
+    );
+    const metaModes = useMemo(
+        () => browseModes.filter(definition => definition.tier === 'meta'),
+        [browseModes]
+    );
+
+    // The underlying modes a secondary meta tile offers. People's children (Actors, Directors,
+    // Writers) have no definitions yet, so it resolves to an empty grid until that later step.
+    const activeGroupChildren = useMemo(
+        () => (activeGroup?.children ?? [])
+            .map(child => getBrowseMode(collectionType, child))
+            .filter((definition): definition is BrowseModeDefinition => Boolean(definition)),
+        [activeGroup, collectionType]
     );
 
     const libraryPath = useMemo(
@@ -415,14 +437,14 @@ const Browse: FC = () => {
         navigate(`${libraryPath}?${params.toString()}`);
     }, [navigate, libraryPath, libraryId, collectionType]);
 
-    const onModeClick = useCallback((definition: BrowseModeDefinition) => {
+    // Opens a leaf mode: a picker opens in place, a view-backed mode opens its tab, and the rest
+    // seed the sort and filters of the library's default view.
+    const openLeaf = useCallback((definition: BrowseModeDefinition) => {
         if (definition.picker) {
             setActivePicker(definition);
             return;
         }
 
-        // Modes backed by an existing view open that view's tab; the rest seed the sort and
-        // filters of the library's default view.
         if (definition.view) {
             const views = LibraryRoutes.find(route => route.type === collectionType)?.views ?? [];
             const index = views.find(view => view.view === definition.view)?.index;
@@ -432,6 +454,26 @@ const Browse: FC = () => {
 
         goToLibrary(definition.settings ? `browseMode=${definition.mode}` : '');
     }, [collectionType, goToLibrary]);
+
+    const onModeClick = useCallback((definition: BrowseModeDefinition) => {
+        // A meta tile with exactly one child opens that child directly (Mood & Tone -> Mood,
+        // Time -> Decades).
+        if (definition.children?.length === 1) {
+            const child = getBrowseMode(collectionType, definition.children[0]);
+            if (child) {
+                openLeaf(child);
+                return;
+            }
+        }
+
+        // A meta tile with several children opens a secondary grid of them.
+        if (definition.children?.length) {
+            setActiveGroup(definition);
+            return;
+        }
+
+        openLeaf(definition);
+    }, [collectionType, openLeaf]);
 
     const onPickClick = useCallback((value: string) => {
         if (!activePicker) {
@@ -456,6 +498,148 @@ const Browse: FC = () => {
         localStorage.setItem('browseTagSort', value);
     }, []);
 
+    const handleBackFromPicker = useCallback(() => setActivePicker(null), []);
+    const handleBackFromGroup = useCallback(() => setActiveGroup(null), []);
+
+    // Three views share the page — a picker, a meta secondary grid, and the home grid. A single
+    // render function keeps the JSX free of nested ternaries.
+    const renderBrowseContent = () => {
+        if (activePicker) {
+            return (
+                <>
+                    <Stack direction='row' alignItems='center' gap={1}>
+                        <IconButton onClick={handleBackFromPicker} size='small' aria-label={globalize.translate('ButtonBack')}>
+                            <ArrowBack fontSize='small' />
+                        </IconButton>
+                        <Typography variant='h2' sx={{ flexGrow: 1 }}>
+                            {globalize.translate(activePicker.label)}
+                        </Typography>
+                        {isTagPicker && (
+                            <>
+                                <Tooltip title='Shuffle tags'>
+                                    <IconButton onClick={handleShuffle} size='small'>
+                                        <Shuffle fontSize='small' />
+                                    </IconButton>
+                                </Tooltip>
+                                <FormControl size='small' sx={{ minWidth: 130 }}>
+                                    <Select
+                                        value={tagSort}
+                                        onChange={handleSortChange}
+                                        inputProps={{ 'aria-label': 'Sort order' }}
+                                    >
+                                        <MenuItem value='random'>Random</MenuItem>
+                                        <MenuItem value='az'>A — Z</MenuItem>
+                                        <MenuItem value='za'>Z — A</MenuItem>
+                                        <MenuItem value='most'>Most items</MenuItem>
+                                        <MenuItem value='fewest'>Fewest items</MenuItem>
+                                    </Select>
+                                </FormControl>
+                                <Tooltip title={pickerView === 'ribbons' ? 'Switch to grid' : 'Switch to shelves'}>
+                                    <IconButton onClick={togglePickerView} size='small'>
+                                        {pickerView === 'ribbons' ? <ViewModule fontSize='small' /> : <ViewStream fontSize='small' />}
+                                    </IconButton>
+                                </Tooltip>
+                            </>
+                        )}
+                    </Stack>
+
+                    {isTagPicker && pickerView === 'ribbons' ? (
+                        <Stack spacing={2}>
+                            {pickOptions.slice(0, displayCount).map(option => (
+                                <TagRibbonsSection
+                                    key={option.value}
+                                    tagName={option.value}
+                                    parentId={libraryId ?? ''}
+                                    collectionType={collectionType ?? undefined}
+                                    itemType={itemKind ? [itemKind] : []}
+                                />
+                            ))}
+                            {displayCount < pickOptions.length && (
+                                <Box ref={sentinelRef} sx={{ height: 1 }} />
+                            )}
+                        </Stack>
+                    ) : (
+                        <>
+                            <TileGrid>
+                                {pickOptions.slice(0, displayCount).map(option => (
+                                    <PickTile
+                                        key={option.value}
+                                        label={option.label}
+                                        value={option.value}
+                                        Icon={option.Icon}
+                                        iconColor={option.iconColor}
+                                        count={pickerCounts[option.value] ?? pickerCounts[option.label]}
+                                        onSelect={onPickClick}
+                                    />
+                                ))}
+                            </TileGrid>
+                            {displayCount < pickOptions.length && (
+                                <Box ref={sentinelRef} sx={{ height: 1 }} />
+                            )}
+                        </>
+                    )}
+                </>
+            );
+        }
+
+        if (activeGroup) {
+            return (
+                <>
+                    <Stack direction='row' alignItems='center' gap={1}>
+                        <IconButton onClick={handleBackFromGroup} size='small' aria-label={globalize.translate('ButtonBack')}>
+                            <ArrowBack fontSize='small' />
+                        </IconButton>
+                        <Typography variant='h2' sx={{ flexGrow: 1 }}>
+                            {globalize.translate(activeGroup.label)}
+                        </Typography>
+                    </Stack>
+
+                    <TileGrid>
+                        {activeGroupChildren.map(definition => (
+                            <BrowseModeTile
+                                key={definition.mode}
+                                definition={definition}
+                                onSelect={onModeClick}
+                            />
+                        ))}
+                    </TileGrid>
+                </>
+            );
+        }
+
+        return (
+            <>
+                <Typography variant='h2'>
+                    {globalize.translate('BrowseModeSectionQuickAccess')}
+                </Typography>
+                <TileGrid>
+                    {primaryModes.map(definition => (
+                        <BrowseModeTile
+                            key={definition.mode}
+                            definition={definition}
+                            onSelect={onModeClick}
+                        />
+                    ))}
+                </TileGrid>
+
+                <Divider />
+
+                <Typography variant='h2'>
+                    {globalize.translate('BrowseModeSectionBrowseBy')}
+                </Typography>
+                <TileGrid>
+                    {metaModes.map(definition => (
+                        <BrowseModeTile
+                            key={definition.mode}
+                            definition={definition}
+                            onSelect={onModeClick}
+                        />
+                    ))}
+                </TileGrid>
+            </>
+        );
+    };
+
     return (
         <Page
             id='browseModesPage'
@@ -468,88 +652,7 @@ const Browse: FC = () => {
                         {library?.Name ?? globalize.translate('HeaderBrowseBy')}
                     </Typography>
 
-                    {activePicker ? (
-                        <>
-                            <Stack direction='row' alignItems='center' gap={1}>
-                                <Typography variant='h2' sx={{ flexGrow: 1 }}>
-                                    {globalize.translate(activePicker.label)}
-                                </Typography>
-                                {isTagPicker && (
-                                    <>
-                                        <Tooltip title='Shuffle tags'>
-                                            <IconButton onClick={handleShuffle} size='small'>
-                                                <Shuffle fontSize='small' />
-                                            </IconButton>
-                                        </Tooltip>
-                                        <FormControl size='small' sx={{ minWidth: 130 }}>
-                                            <Select
-                                                value={tagSort}
-                                                onChange={handleSortChange}
-                                                inputProps={{ 'aria-label': 'Sort order' }}
-                                            >
-                                                <MenuItem value='random'>Random</MenuItem>
-                                                <MenuItem value='az'>A — Z</MenuItem>
-                                                <MenuItem value='za'>Z — A</MenuItem>
-                                                <MenuItem value='most'>Most items</MenuItem>
-                                                <MenuItem value='fewest'>Fewest items</MenuItem>
-                                            </Select>
-                                        </FormControl>
-                                        <Tooltip title={pickerView === 'ribbons' ? 'Switch to grid' : 'Switch to shelves'}>
-                                            <IconButton onClick={togglePickerView} size='small'>
-                                                {pickerView === 'ribbons' ? <ViewModule fontSize='small' /> : <ViewStream fontSize='small' />}
-                                            </IconButton>
-                                        </Tooltip>
-                                    </>
-                                )}
-                            </Stack>
-
-                            {isTagPicker && pickerView === 'ribbons' ? (
-                                <Stack spacing={2}>
-                                    {pickOptions.slice(0, displayCount).map(option => (
-                                        <TagRibbonsSection
-                                            key={option.value}
-                                            tagName={option.value}
-                                            parentId={libraryId ?? ''}
-                                            collectionType={collectionType ?? undefined}
-                                            itemType={itemKind ? [itemKind] : []}
-                                        />
-                                    ))}
-                                    {displayCount < pickOptions.length && (
-                                        <Box ref={sentinelRef} sx={{ height: 1 }} />
-                                    )}
-                                </Stack>
-                            ) : (
-                                <>
-                                    <TileGrid>
-                                        {pickOptions.slice(0, displayCount).map(option => (
-                                            <PickTile
-                                                key={option.value}
-                                                label={option.label}
-                                                value={option.value}
-                                                Icon={option.Icon}
-                                                iconColor={option.iconColor}
-                                                count={pickerCounts[option.value] ?? pickerCounts[option.label]}
-                                                onSelect={onPickClick}
-                                            />
-                                        ))}
-                                    </TileGrid>
-                                    {displayCount < pickOptions.length && (
-                                        <Box ref={sentinelRef} sx={{ height: 1 }} />
-                                    )}
-                                </>
-                            )}
-                        </>
-                    ) : (
-                        <TileGrid>
-                            {browseModes?.map(definition => (
-                                <BrowseModeTile
-                                    key={definition.mode}
-                                    definition={definition}
-                                    onSelect={onModeClick}
-                                />
-                            ))}
-                        </TileGrid>
-                    )}
+                    {renderBrowseContent()}
                 </Stack>
             </Box>
         </Page>
