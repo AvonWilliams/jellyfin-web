@@ -88,11 +88,12 @@ interface TileProps {
     Icon?: BrowseModeDefinition['Icon'];
     iconColor?: string;
     iconSize?: string;
+    labelSize?: string;
     count?: number;
     onClick: () => void;
 }
 
-const Tile: FC<TileProps> = ({ label, Icon, iconColor, iconSize, count, onClick }) => (
+const Tile: FC<TileProps> = ({ label, Icon, iconColor, iconSize, labelSize, count, onClick }) => (
     <ButtonBase
         onClick={onClick}
         focusRipple
@@ -113,7 +114,7 @@ const Tile: FC<TileProps> = ({ label, Icon, iconColor, iconSize, count, onClick 
         }}
     >
         {Icon ? <Icon sx={{ fontSize: iconSize ?? '2.5rem', color: iconColor }} /> : null}
-        <Typography variant='subtitle1' sx={{ textAlign: 'center', lineHeight: 1.2 }}>
+        <Typography variant='subtitle1' sx={{ textAlign: 'center', lineHeight: 1.2, fontSize: labelSize }}>
             {label}
         </Typography>
         {count !== undefined ? (
@@ -128,7 +129,8 @@ const BrowseModeTile: FC<{
     definition: BrowseModeDefinition;
     onSelect: (definition: BrowseModeDefinition) => void;
     iconSize?: string;
-}> = ({ definition, onSelect, iconSize }) => {
+    labelSize?: string;
+}> = ({ definition, onSelect, iconSize, labelSize }) => {
     const onClick = useCallback(() => onSelect(definition), [onSelect, definition]);
 
     return (
@@ -137,6 +139,7 @@ const BrowseModeTile: FC<{
             Icon={definition.Icon}
             iconColor={definition.iconColor}
             iconSize={iconSize}
+            labelSize={labelSize}
             onClick={onClick}
         />
     );
@@ -702,6 +705,7 @@ const Browse: FC = () => {
                             definition={definition}
                             onSelect={onModeClick}
                             iconSize='3.5rem'
+                            labelSize='1.4rem'
                         />
                     ))}
                 </PrimaryTileGrid>
