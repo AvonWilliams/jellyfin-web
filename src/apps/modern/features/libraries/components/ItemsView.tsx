@@ -12,7 +12,9 @@ import { getDefaultLibraryViewSettings } from 'apps/modern/features/libraries/ut
 import BrowseSourceBar from 'apps/modern/features/libraries/components/BrowseSourceBar';
 import ComingSoonCard from 'apps/modern/features/libraries/components/ComingSoonCard';
 import { DEFAULT_BROWSE_SOURCE, ENABLED_BROWSE_SOURCES } from 'apps/modern/features/libraries/constants/browseSources';
+import Card from 'components/cardbuilder/Card/Card';
 import Cards from 'components/cardbuilder/Card/Cards';
+import { setCardData } from 'components/cardbuilder/cardBuilder';
 import { CardShape } from 'components/cardbuilder/utils/shape';
 import NoItemsMessage from 'components/common/NoItemsMessage';
 import Lists from 'components/listview/List/Lists';
@@ -188,12 +190,47 @@ const ItemsView: FC = () => {
 
         if (libraryViewSettings.ViewMode === ViewMode.ListView) {
             return (
-                <Lists
-                    items={itemsResult?.data?.Items ?? []}
-                    listOptions={getListOptions()}
-                />
+                <>
+                    <Lists
+                        items={itemsResult?.data?.Items ?? []}
+                        listOptions={getListOptions()}
+                    />
+                    {visibleMissing.map(title => (
+                        <ComingSoonCard
+                            key={`${title.Source ?? 'missing'}-${title.Rank ?? title.Title}`}
+                            title={title}
+                        />
+                    ))}
+                </>
             );
         }
+
+        if (isRankedView) {
+            const items = itemsResult?.data?.Items ?? [];
+            const cardOptions = getCardOptions();
+            setCardData(items, cardOptions);
+
+            const entries = [
+                ...items.map(item => ({
+                    rank: item.IndexNumber ?? Number.MAX_SAFE_INTEGER,
+                    node: <Card key={item.Id} item={item} cardOptions={cardOptions} />
+                })),
+                ...visibleMissing.map(title => ({
+                    rank: title.Rank ?? Number.MAX_SAFE_INTEGER,
+                    node: (
+                        <ComingSoonCard
+                            key={`${title.Source ?? 'missing'}-${title.Rank ?? title.Title}`}
+                            title={title}
+                        />
+                    )
+                }))
+            ];
+
+            entries.sort((a, b) => a.rank - b.rank);
+
+            return entries.map(entry => entry.node);
+        }
+
         return (
             <Cards
                 items={itemsResult?.data?.Items ?? []}
@@ -207,7 +244,8 @@ const ItemsView: FC = () => {
         itemsResult?.data?.Items,
         getListOptions,
         getCardOptions,
-        noItemsMessage
+        noItemsMessage,
+        isRankedView
     ]);
 
     const handleAlphabetChange = useCallback((newValue: string | null | undefined) => {
@@ -274,12 +312,6 @@ const ItemsView: FC = () => {
                     queryKey={allItemsQueryKey}
                 >
                     {getItems()}
-                    {visibleMissing.map(title => (
-                        <ComingSoonCard
-                            key={`${title.Source ?? 'missing'}-${title.Rank ?? title.Title}`}
-                            title={title}
-                        />
-                    ))}
                 </ItemsContainer>
             )}
         </Box>
