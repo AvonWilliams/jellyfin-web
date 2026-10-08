@@ -87,11 +87,12 @@ interface TileProps {
     label: string;
     Icon?: BrowseModeDefinition['Icon'];
     iconColor?: string;
+    iconSize?: string;
     count?: number;
     onClick: () => void;
 }
 
-const Tile: FC<TileProps> = ({ label, Icon, iconColor, count, onClick }) => (
+const Tile: FC<TileProps> = ({ label, Icon, iconColor, iconSize, count, onClick }) => (
     <ButtonBase
         onClick={onClick}
         focusRipple
@@ -104,15 +105,15 @@ const Tile: FC<TileProps> = ({ label, Icon, iconColor, count, onClick }) => (
             aspectRatio: '16 / 9',
             padding: 2,
             borderRadius: 1,
-            backgroundColor: 'action.hover',
+            backgroundColor: 'rgba(0, 0, 0, 0.66)',
             transition: 'background-color 120ms ease, transform 120ms ease',
             '&:hover, &:focus-visible': {
-                backgroundColor: 'action.selected',
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
                 transform: 'scale(1.03)'
             }
         }}
     >
-        {Icon ? <Icon sx={{ fontSize: '2.5rem', color: iconColor }} /> : null}
+        {Icon ? <Icon sx={{ fontSize: iconSize ?? '2.5rem', color: iconColor }} /> : null}
         <Typography variant='subtitle1' sx={{ textAlign: 'center', lineHeight: 1.2 }}>
             {label}
         </Typography>
@@ -127,7 +128,8 @@ const Tile: FC<TileProps> = ({ label, Icon, iconColor, count, onClick }) => (
 const BrowseModeTile: FC<{
     definition: BrowseModeDefinition;
     onSelect: (definition: BrowseModeDefinition) => void;
-}> = ({ definition, onSelect }) => {
+    iconSize?: string;
+}> = ({ definition, onSelect, iconSize }) => {
     const onClick = useCallback(() => onSelect(definition), [onSelect, definition]);
 
     return (
@@ -135,6 +137,7 @@ const BrowseModeTile: FC<{
             label={globalize.translate(definition.label)}
             Icon={definition.Icon}
             iconColor={definition.iconColor}
+            iconSize={iconSize}
             onClick={onClick}
         />
     );
@@ -158,6 +161,23 @@ const TileGrid: FC<{ children: React.ReactNode }> = ({ children }) => (
         sx={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+            gap: 2
+        }}
+    >
+        {children}
+    </Box>
+);
+
+/** Even six-column grid for the primary modes, collapsing to fewer columns on narrow widths. */
+const PrimaryTileGrid: FC<{ children: React.ReactNode }> = ({ children }) => (
+    <Box
+        sx={{
+            display: 'grid',
+            gridTemplateColumns: {
+                xs: 'repeat(2, minmax(0, 1fr))',
+                sm: 'repeat(3, minmax(0, 1fr))',
+                lg: 'repeat(6, minmax(0, 1fr))'
+            },
             gap: 2
         }}
     >
@@ -676,17 +696,18 @@ const Browse: FC = () => {
                 <Typography variant='h2'>
                     {globalize.translate('BrowseModeSectionQuickAccess')}
                 </Typography>
-                <TileGrid>
+                <PrimaryTileGrid>
                     {primaryModes.map(definition => (
                         <BrowseModeTile
                             key={definition.mode}
                             definition={definition}
                             onSelect={onModeClick}
+                            iconSize='3rem'
                         />
                     ))}
-                </TileGrid>
+                </PrimaryTileGrid>
 
-                <Divider />
+                <Divider sx={{ my: 2, borderBottomWidth: 2 }} />
 
                 <Typography variant='h2'>
                     {globalize.translate('BrowseModeSectionBrowseBy')}
