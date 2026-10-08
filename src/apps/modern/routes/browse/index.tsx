@@ -105,10 +105,10 @@ const Tile: FC<TileProps> = ({ label, Icon, iconColor, iconSize, labelSize, coun
             aspectRatio: '16 / 9',
             padding: 2,
             borderRadius: 2,
-            backgroundColor: 'rgba(58, 58, 58, 0.79)',
+            backgroundColor: 'rgba(52, 52, 52, 0.79)',
             transition: 'background-color 120ms ease, transform 120ms ease',
             '&:hover, &:focus-visible': {
-                backgroundColor: 'rgba(58, 58, 58, 0.88)',
+                backgroundColor: 'rgba(52, 52, 52, 0.88)',
                 transform: 'scale(1.03)'
             }
         }}
@@ -197,36 +197,15 @@ const InlineModeLinks: FC<{
         <Typography variant='h3'>
             {globalize.translate(definition.label)}
         </Typography>
-        <Stack direction='row' spacing={1.5} flexWrap='wrap'>
-            {children.map(child => {
-                const ChildIcon = child.Icon;
-                return (
-                    <ButtonBase
-                        key={child.mode}
-                        onClick={() => onSelect(child)}
-                        focusRipple
-                        sx={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 0.75,
-                            px: 1.5,
-                            py: 0.5,
-                            borderRadius: 2,
-                            color: 'primary.main',
-                            '&:hover, &:focus-visible': {
-                                backgroundColor: 'action.hover',
-                                textDecoration: 'underline'
-                            }
-                        }}
-                    >
-                        {ChildIcon ? <ChildIcon sx={{ fontSize: '1.25rem', color: child.iconColor }} /> : null}
-                        <Typography variant='body1' sx={{ color: 'inherit' }}>
-                            {globalize.translate(child.label)}
-                        </Typography>
-                    </ButtonBase>
-                );
-            })}
-        </Stack>
+        <TileGrid>
+            {children.map(child => (
+                <BrowseModeTile
+                    key={child.mode}
+                    definition={child}
+                    onSelect={onSelect}
+                />
+            ))}
+        </TileGrid>
     </Stack>
 );
 
