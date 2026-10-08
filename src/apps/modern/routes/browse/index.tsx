@@ -405,6 +405,17 @@ const Browse: FC = () => {
                 return [];
             }
 
+            if (activePicker.picker.individualYears) {
+                return [...new Set(years)]
+                    .sort((a, b) => b - a)
+                    .map(year => ({
+                        label: String(year),
+                        value: String(year),
+                        Icon: activePicker.Icon,
+                        iconColor: activePicker.iconColor
+                    }));
+            }
+
             const startYears = [...new Set(years.map(year => Math.floor(year / DECADE_LENGTH) * DECADE_LENGTH))];
             startYears.sort((a, b) => b - a);
 
