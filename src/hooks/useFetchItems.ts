@@ -30,6 +30,7 @@ import { LibraryTab } from 'types/libraryTab';
 import { ItemKind } from 'types/base/models/item-kind';
 import type { ItemDtoQueryResult } from 'types/base/models/item-dto-query-result';
 import type { ItemDto } from 'types/base/models/item-dto';
+import type { DiscoverRankedResult } from 'types/discover';
 
 const fetchGetItems = async (
     currentApi: JellyfinApiContext,
@@ -239,7 +240,7 @@ const fetchDiscoverList = (
     const list = viewType === LibraryTab.TopRated ? 'TopRated' : 'Trending';
     const kind = itemType.includes(BaseItemKind.Series) ? 'Shows' : 'Movies';
 
-    return api.axiosInstance.get<ItemDtoQueryResult>(
+    return api.axiosInstance.get<DiscoverRankedResult>(
         `${api.basePath}/Discover/${list}/${kind}`,
         {
             params: {
