@@ -30,6 +30,7 @@ import { LibraryTab } from 'types/libraryTab';
 import { ItemKind } from 'types/base/models/item-kind';
 import type { ItemDtoQueryResult } from 'types/base/models/item-dto-query-result';
 import type { ItemDto } from 'types/base/models/item-dto';
+import type { DiscoverRankedResult } from 'types/discover';
 
 const fetchGetItems = async (
     currentApi: JellyfinApiContext,
@@ -107,6 +108,41 @@ export const useGetStudios = (parentId: ParentId, itemType: BaseItemKind[]) => {
         queryFn: ({ signal }) =>
             fetchGetStudios(currentApi, parentId, itemType, { signal }),
         enabled: !!currentApi.api && !!currentApi.user?.Id && !!parentId && !isLivetv
+    });
+};
+
+const fetchGetPersons = async (
+    currentApi: JellyfinApiContext,
+    parentId: ParentId,
+    personType: PersonKind,
+    options?: AxiosRequestConfig
+) => {
+    const { api, user } = currentApi;
+    if (api && user?.Id) {
+        const response = await getPersonApi(api).getPersons(
+            {
+                userId: user.Id,
+                parentId: parentId ?? undefined,
+                personTypes: [personType],
+                fields: [ItemFields.PrimaryImageAspectRatio],
+                enableImageTypes: [ImageType.Primary],
+                limit: 500
+            },
+            {
+                signal: options?.signal
+            }
+        );
+        return response.data.Items;
+    }
+};
+
+export const useGetPersons = (parentId: ParentId, personType?: PersonKind) => {
+    const currentApi = useApi();
+    return useQuery({
+        queryKey: ['Persons', parentId, personType],
+        queryFn: ({ signal }) =>
+            fetchGetPersons(currentApi, parentId, personType!, { signal }),
+        enabled: !!currentApi.api && !!currentApi.user?.Id && !!parentId && !!personType
     });
 };
 
@@ -198,19 +234,21 @@ const fetchDiscoverList = (
     viewType: LibraryTab,
     parentId: ParentId,
     itemType: BaseItemKind[],
+    source: string | undefined,
     options?: AxiosRequestConfig
 ) => {
     const list = viewType === LibraryTab.TopRated ? 'TopRated' : 'Trending';
     const kind = itemType.includes(BaseItemKind.Series) ? 'Shows' : 'Movies';
 
-    return api.axiosInstance.get<ItemDtoQueryResult>(
+    return api.axiosInstance.get<DiscoverRankedResult>(
         `${api.basePath}/Discover/${list}/${kind}`,
         {
             params: {
                 userId,
                 parentId: parentId ?? undefined,
                 fields: ItemFields.PrimaryImageAspectRatio,
-                limit: 500
+                limit: 500,
+                source
             },
             headers: { Authorization: api.authorizationHeader },
             signal: options?.signal
@@ -224,6 +262,7 @@ const fetchGetItemsViewByType = async (
     parentId: ParentId,
     itemType: BaseItemKind[],
     libraryViewSettings: LibraryViewSettings,
+    source: string | undefined,
     options?: AxiosRequestConfig
 ) => {
     const { api, user } = currentApi;
@@ -361,7 +400,7 @@ const fetchGetItemsViewByType = async (
                 break;
             case LibraryTab.Trending:
             case LibraryTab.TopRated:
-                response = await fetchDiscoverList(api, user.Id, viewType, parentId, itemType, options);
+                response = await fetchDiscoverList(api, user.Id, viewType, parentId, itemType, source, options);
                 break;
             default: {
                 response = await getLibraryApi(api).getItems(
@@ -398,7 +437,8 @@ export const useGetItemsViewByType = (
     viewType: LibraryTab | undefined,
     parentId: ParentId,
     itemType: BaseItemKind[] = [],
-    libraryViewSettings: LibraryViewSettings
+    libraryViewSettings: LibraryViewSettings,
+    source?: string
 ) => {
     const currentApi = useApi();
     return useQuery({
@@ -411,7 +451,8 @@ export const useGetItemsViewByType = (
             viewType,
             {
                 itemType,
-                libraryViewSettings
+                libraryViewSettings,
+                source
             }
         ],
         queryFn: ({ signal }) =>
@@ -421,6 +462,7 @@ export const useGetItemsViewByType = (
                 parentId,
                 itemType,
                 libraryViewSettings!,
+                source,
                 { signal }
             ),
         refetchOnWindowFocus: false,

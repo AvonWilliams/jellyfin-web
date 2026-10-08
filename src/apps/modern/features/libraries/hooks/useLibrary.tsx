@@ -12,6 +12,7 @@ import { LibraryTab } from 'types/libraryTab';
 import { LibraryTabContent } from 'types/libraryTabContent';
 
 import { getBrowseMode } from '../constants/browseModes';
+import { DEFAULT_BROWSE_SOURCE } from '../constants/browseSources';
 import { LibraryRoutes } from '../constants/libraryRoutes';
 import { isLibraryPath } from '../utils/path';
 import { getDefaultLibraryViewSettings, getSettingsKey } from '../utils/settings';
@@ -25,6 +26,8 @@ interface LibraryState {
     itemsResult?: UseQueryResult<ItemDtoQueryResult | undefined, Error>;
     viewSettings?: LibraryViewSettings;
     setViewSettings?: React.Dispatch<React.SetStateAction<LibraryViewSettings>>;
+    source?: string;
+    setSource?: React.Dispatch<React.SetStateAction<string>>;
 }
 
 const DEFAULT_LIBRARY_STATE: LibraryState = {
@@ -85,11 +88,20 @@ export const LibraryProvider: FC<PropsWithChildren<unknown>> = ({ children }) =>
         getDefaultLibraryViewSettings(settingsViewType, browseModeSettings)
     );
 
+    // The ranked data source (TMDb, IMDb, …) for Trending / Top Rated, persisted per view so
+    // switching sources only re-fetches the ranked list without touching the library view settings.
+    const isRankedView = viewType === LibraryTab.Trending || viewType === LibraryTab.TopRated;
+    const [source, setSource] = useLocalStorage<string>(
+        `browseSource-${settingsViewType}`,
+        DEFAULT_BROWSE_SOURCE
+    );
+
     const itemsResult = useGetItemsViewByType(
         viewType,
         libraryId,
         content?.itemType,
-        viewSettings
+        viewSettings,
+        isRankedView ? source : undefined
     );
 
     const state = useMemo(() => ({
@@ -100,8 +112,10 @@ export const LibraryProvider: FC<PropsWithChildren<unknown>> = ({ children }) =>
         content,
         viewSettings,
         setViewSettings,
-        itemsResult
-    }), [collectionType, isLibPath, id, content, viewSettings, setViewSettings, itemsResult]);
+        itemsResult,
+        source: isRankedView ? source : undefined,
+        setSource: isRankedView ? setSource : undefined
+    }), [collectionType, isLibPath, id, content, viewSettings, setViewSettings, itemsResult, isRankedView, source, setSource]);
 
     return (
         <LibraryContext.Provider value={state}>

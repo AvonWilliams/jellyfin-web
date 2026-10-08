@@ -1,12 +1,20 @@
 import { ImageType } from '@jellyfin/sdk/lib/generated-client/models/image-type';
 import { ItemSortBy } from '@jellyfin/sdk/lib/generated-client/models/item-sort-by';
 import Box from '@mui/material/Box';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import Switch from '@mui/material/Switch';
 import classNames from 'classnames';
 import React, { type FC, SetStateAction, useCallback, useMemo } from 'react';
+import { useLocalStorage } from 'usehooks-ts';
 
 import { useLibrary } from 'apps/modern/features/libraries/hooks/useLibrary';
 import { getDefaultLibraryViewSettings } from 'apps/modern/features/libraries/utils/settings';
+import BrowseSourceBar from 'apps/modern/features/libraries/components/BrowseSourceBar';
+import ComingSoonCard from 'apps/modern/features/libraries/components/ComingSoonCard';
+import { DEFAULT_BROWSE_SOURCE, ENABLED_BROWSE_SOURCES } from 'apps/modern/features/libraries/constants/browseSources';
+import Card from 'components/cardbuilder/Card/Card';
 import Cards from 'components/cardbuilder/Card/Cards';
+import { setCardData } from 'components/cardbuilder/cardBuilder';
 import { CardShape } from 'components/cardbuilder/utils/shape';
 import NoItemsMessage from 'components/common/NoItemsMessage';
 import Lists from 'components/listview/List/Lists';
@@ -14,7 +22,9 @@ import Loading from 'components/loading/LoadingComponent';
 import { ItemAction } from 'constants/itemAction';
 import ItemsContainer from 'elements/emby-itemscontainer/ItemsContainer';
 import { useApi } from 'hooks/useApi';
+import globalize from 'lib/globalize';
 import type { CardOptions } from 'types/cardOptions';
+import type { DiscoverRankedResult } from 'types/discover';
 import { type LibraryViewSettings, ViewMode } from 'types/library';
 import { LibraryTab } from 'types/libraryTab';
 import type { ListOptions } from 'types/listOptions';
@@ -29,9 +39,12 @@ const ItemsView: FC = () => {
         content,
         itemsResult,
         viewSettings,
-        setViewSettings
+        setViewSettings,
+        source,
+        setSource
     } = useLibrary();
     const viewType = content?.viewType ?? LibraryTab.Movies;
+    const isRankedView = viewType === LibraryTab.Trending || viewType === LibraryTab.TopRated;
     const libraryViewSettings = viewSettings ?? getDefaultLibraryViewSettings(viewType);
     const setLibraryViewSettings = useMemo(
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -49,6 +62,17 @@ const ItemsView: FC = () => {
     ].join(', '));
 
     const { __legacyApiClient__, user } = useApi();
+
+    // Per-user client toggle for missing titles; hiding them never changes the server default.
+    const [showMissing, setShowMissing] = useLocalStorage<boolean>(
+        `browseShowMissing-${user?.Id ?? 'default'}`,
+        true
+    );
+
+    // The ranked discover response carries external "missing" stubs alongside in-library items.
+    const discover = isRankedView ? (itemsResult?.data as DiscoverRankedResult | undefined) : undefined;
+    const visibleMissing = isRankedView && showMissing ? (discover?.Missing ?? []) : [];
+    const hasItems = Boolean(itemsResult?.data?.Items?.length);
 
     // The query key for all items for the current user.
     // This should be used to invalidate queries that affect multiple parents, such as collections and playlists.
@@ -160,18 +184,53 @@ const ItemsView: FC = () => {
     ]);
 
     const getItems = useCallback(() => {
-        if (!itemsResult?.data?.Items?.length) {
+        if (!hasItems && visibleMissing.length === 0) {
             return <NoItemsMessage message={noItemsMessage ?? 'MessageNoItemsAvailable'} />;
         }
 
         if (libraryViewSettings.ViewMode === ViewMode.ListView) {
             return (
-                <Lists
-                    items={itemsResult?.data?.Items ?? []}
-                    listOptions={getListOptions()}
-                />
+                <>
+                    <Lists
+                        items={itemsResult?.data?.Items ?? []}
+                        listOptions={getListOptions()}
+                    />
+                    {visibleMissing.map(title => (
+                        <ComingSoonCard
+                            key={`${title.Source ?? 'missing'}-${title.Rank ?? title.Title}`}
+                            title={title}
+                        />
+                    ))}
+                </>
             );
         }
+
+        if (isRankedView) {
+            const items = itemsResult?.data?.Items ?? [];
+            const cardOptions = getCardOptions();
+            setCardData(items, cardOptions);
+
+            const entries = [
+                ...items.map(item => ({
+                    rank: item.IndexNumber ?? Number.MAX_SAFE_INTEGER,
+                    node: <Card key={item.Id} item={item} cardOptions={cardOptions} />
+                })),
+                ...visibleMissing.map(title => ({
+                    rank: title.Rank ?? Number.MAX_SAFE_INTEGER,
+                    node: (
+                        <ComingSoonCard
+                            key={`${title.Source ?? 'missing'}-${title.Rank ?? title.Title}`}
+                            title={title}
+                        />
+                    )
+                }))
+            ];
+
+            entries.sort((a, b) => a.rank - b.rank);
+
+            return entries.map(entry => entry.node);
+        }
+
         return (
             <Cards
                 items={itemsResult?.data?.Items ?? []}
@@ -179,11 +238,14 @@ const ItemsView: FC = () => {
             />
         );
     }, [
+        hasItems,
+        visibleMissing,
         libraryViewSettings.ViewMode,
         itemsResult?.data?.Items,
         getListOptions,
         getCardOptions,
-        noItemsMessage
+        noItemsMessage,
+        isRankedView
     ]);
 
     const handleAlphabetChange = useCallback((newValue: string | null | undefined) => {
@@ -210,6 +272,34 @@ const ItemsView: FC = () => {
                     value={libraryViewSettings.Alphabet}
                     onChange={handleAlphabetChange}
                 />
+            )}
+
+            {isRankedView && setSource && (
+                <Box
+                    sx={{
+                        marginBottom: 2,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        flexWrap: 'wrap',
+                        gap: 1
+                    }}
+                >
+                    <BrowseSourceBar
+                        sources={ENABLED_BROWSE_SOURCES}
+                        activeSource={source ?? DEFAULT_BROWSE_SOURCE}
+                        onChange={setSource}
+                    />
+                    <FormControlLabel
+                        control={
+                            <Switch
+                                checked={showMissing}
+                                onChange={(_event, checked) => setShowMissing(checked)}
+                            />
+                        }
+                        label={globalize.translate('ShowMissingTitles')}
+                    />
+                </Box>
             )}
 
             {(!itemsResult || itemsResult.isPending) ? (

@@ -1,7 +1,9 @@
 import { BaseItemKind } from '@jellyfin/sdk/lib/generated-client/models/base-item-kind';
 import { CollectionType } from '@jellyfin/sdk/lib/generated-client/models/collection-type';
+import type { PersonKind } from '@jellyfin/sdk/lib/generated-client/models/person-kind';
 import Box from '@mui/material/Box';
 import ButtonBase from '@mui/material/ButtonBase';
+import Divider from '@mui/material/Divider';
 import FormControl from '@mui/material/FormControl';
 import IconButton from '@mui/material/IconButton';
 import MenuItem from '@mui/material/MenuItem';
@@ -9,24 +11,41 @@ import Select, { type SelectChangeEvent } from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
+import ArrowBack from '@mui/icons-material/ArrowBack';
 import Shuffle from '@mui/icons-material/Shuffle';
 import ViewModule from '@mui/icons-material/ViewModule';
 import ViewStream from '@mui/icons-material/ViewStream';
 import React, { type FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
-import { applyBrowseModeOrder, getBrowseModes } from 'apps/modern/features/libraries/constants/browseModes';
-import { getDecadeStyle, getRatingStyle, toTitleCase } from 'apps/modern/features/libraries/constants/pickTiles';
+import { applyBrowseModeOrder, getBrowseMode, getBrowseModes } from 'apps/modern/features/libraries/constants/browseModes';
+import { getDecadeStyle, getGenreStyle, getRatingStyle, toTitleCase } from 'apps/modern/features/libraries/constants/pickTiles';
 import TagRibbonsSection from 'apps/modern/features/libraries/components/TagRibbonsSection';
 import { LibraryRoutes } from 'apps/modern/features/libraries/constants/libraryRoutes';
+import { buildPeopleCards } from 'components/cardbuilder/peoplecardbuilder';
+import { CardShape } from 'components/cardbuilder/utils/shape';
+import Loading from 'components/loading/LoadingComponent';
 import Page from 'components/Page';
-import { useGetQueryFiltersLegacy, useGetStudios } from 'hooks/useFetchItems';
+import { useGetPersons, useGetQueryFiltersLegacy, useGetStudios } from 'hooks/useFetchItems';
 import { useApi } from 'hooks/useApi';
 import { useItem } from 'hooks/useItem';
 import globalize from 'lib/globalize';
 import type { BrowseModeDefinition } from 'types/browseMode';
 
 const DECADE_LENGTH = 10;
+
+/**
+ * Full-width bar drawn behind page headings so they stay legible over busy fanart. Darker than
+ * the tile scrim so the headings read as a distinct header layer above the tiles.
+ */
+const HEADING_BAR = {
+    display: 'block',
+    width: '100%',
+    textAlign: 'center',
+    padding: '0.5em 0.75em',
+    borderRadius: 2,
+    backgroundColor: 'rgba(24, 24, 24, 0.8)'
+} as const;
 
 /** Maps a picker's filter kind to the server's /Discover/Counts type. */
 const COUNT_TYPE_BY_FILTER: Record<string, string> = {
@@ -50,14 +69,12 @@ const buildNamedOptions = (
     iconColor: activePicker.iconColor
 }));
 
-/** Builds genre tiles from a plain list of names. */
-const buildGenreOptions = (genres: string[] | null | undefined, activePicker: BrowseModeDefinition) => {
-    const entries = (genres ?? [])
+/** Builds genre tiles from a plain list of names, each drawn with its own genre icon. */
+const buildGenreOptions = (genres: string[] | null | undefined) =>
+    (genres ?? [])
         .slice()
         .sort((a, b) => a.localeCompare(b))
-        .map(genre => ({ label: genre, value: genre }));
-    return buildNamedOptions(activePicker, entries);
-};
+        .map(genre => ({ label: genre, value: genre, ...getGenreStyle(genre) }));
 
 /** Builds studio tiles from studio entities, narrowing by id. */
 const buildStudioOptions = (
@@ -81,15 +98,16 @@ interface TileProps {
     label: string;
     Icon?: BrowseModeDefinition['Icon'];
     iconColor?: string;
+    iconSize?: string;
+    labelSize?: string;
     count?: number;
     onClick: () => void;
 }
 
-const Tile: FC<TileProps> = ({ label, Icon, iconColor, count, onClick }) => (
+const Tile: FC<TileProps> = ({ label, Icon, iconColor, iconSize, labelSize, count, onClick }) => (
     <ButtonBase
         onClick={onClick}
         focusRipple
-        className='card'
         sx={{
             flexDirection: 'column',
             gap: 1,
@@ -97,17 +115,17 @@ const Tile: FC<TileProps> = ({ label, Icon, iconColor, count, onClick }) => (
             width: '100%',
             aspectRatio: '16 / 9',
             padding: 2,
-            borderRadius: 1,
-            backgroundColor: 'action.hover',
+            borderRadius: 2,
+            backgroundColor: 'rgba(52, 52, 52, 0.79)',
             transition: 'background-color 120ms ease, transform 120ms ease',
             '&:hover, &:focus-visible': {
-                backgroundColor: 'action.selected',
+                backgroundColor: 'rgba(52, 52, 52, 0.88)',
                 transform: 'scale(1.03)'
             }
         }}
     >
-        {Icon ? <Icon sx={{ fontSize: '2.5rem', color: iconColor }} /> : null}
-        <Typography variant='subtitle1' sx={{ textAlign: 'center', lineHeight: 1.2 }}>
+        {Icon ? <Icon sx={{ fontSize: iconSize ?? '3.75rem', color: iconColor }} /> : null}
+        <Typography variant='subtitle1' sx={{ textAlign: 'center', lineHeight: 1.2, fontSize: labelSize ?? '1.5rem' }}>
             {label}
         </Typography>
         {count !== undefined ? (
@@ -121,7 +139,9 @@ const Tile: FC<TileProps> = ({ label, Icon, iconColor, count, onClick }) => (
 const BrowseModeTile: FC<{
     definition: BrowseModeDefinition;
     onSelect: (definition: BrowseModeDefinition) => void;
-}> = ({ definition, onSelect }) => {
+    iconSize?: string;
+    labelSize?: string;
+}> = ({ definition, onSelect, iconSize, labelSize }) => {
     const onClick = useCallback(() => onSelect(definition), [onSelect, definition]);
 
     return (
@@ -129,6 +149,8 @@ const BrowseModeTile: FC<{
             label={globalize.translate(definition.label)}
             Icon={definition.Icon}
             iconColor={definition.iconColor}
+            iconSize={iconSize}
+            labelSize={labelSize}
             onClick={onClick}
         />
     );
@@ -159,10 +181,86 @@ const TileGrid: FC<{ children: React.ReactNode }> = ({ children }) => (
     </Box>
 );
 
+/** Even six-column grid for the primary modes, collapsing to fewer columns on narrow widths. */
+const PrimaryTileGrid: FC<{ children: React.ReactNode }> = ({ children }) => (
+    <Box
+        sx={{
+            display: 'grid',
+            gridTemplateColumns: {
+                xs: 'repeat(2, minmax(0, 1fr))',
+                sm: 'repeat(3, minmax(0, 1fr))',
+                lg: 'repeat(6, minmax(0, 1fr))'
+            },
+            gap: 2
+        }}
+    >
+        {children}
+    </Box>
+);
+
+/** Compact inline text links for a meta category with a small fixed set of leaf children. */
+const InlineModeLinks: FC<{
+    definition: BrowseModeDefinition;
+    children: BrowseModeDefinition[];
+    onSelect: (definition: BrowseModeDefinition) => void;
+}> = ({ definition, children, onSelect }) => (
+    <Stack spacing={1}>
+        <Typography variant='h3' sx={HEADING_BAR}>
+            {globalize.translate(definition.label)}
+        </Typography>
+        <TileGrid>
+            {children.map(child => (
+                <BrowseModeTile
+                    key={child.mode}
+                    definition={child}
+                    onSelect={onSelect}
+                />
+            ))}
+        </TileGrid>
+    </Stack>
+);
+
+/** Lists the library's people of one kind (Actor/Director/Writer) as clickable person cards. */
+const PeopleCards: FC<{ parentId?: string; personType?: PersonKind }> = ({ parentId, personType }) => {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const { data: people, isPending } = useGetPersons(parentId, personType);
+
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!container || isPending || !people?.length) {
+            return;
+        }
+
+        buildPeopleCards(people, {
+            itemsContainer: container,
+            coverImage: true,
+            shape: CardShape.PortraitOverflow
+        });
+    }, [people, isPending]);
+
+    if (isPending) {
+        return <Loading />;
+    }
+
+    if (!people?.length) {
+        return (
+            <Typography sx={{ color: 'text.secondary' }}>
+                {globalize.translate('MessageNothingHere')}
+            </Typography>
+        );
+    }
+
+    return <div ref={containerRef} className='itemsContainer vertical-wrap' />;
+};
+
 const Browse: FC = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const [activePicker, setActivePicker] = useState<BrowseModeDefinition | null>(null);
+    // A "Browse by…" meta tile with several children, rendered as a secondary grid.
+    const [activeGroup, setActiveGroup] = useState<BrowseModeDefinition | null>(null);
+    // A People leaf (Actors/Directors/Writers), rendered as a grid of person cards.
+    const [activePersonType, setActivePersonType] = useState<BrowseModeDefinition | null>(null);
 
     // Grid vs. ribbon view toggle, persisted across visits.
     const [pickerView, setPickerView] = useState<'grid' | 'ribbons'>(
@@ -214,6 +312,23 @@ const Browse: FC = () => {
     const browseModes = useMemo(
         () => applyBrowseModeOrder(getBrowseModes(collectionType) ?? [], tileLayout),
         [collectionType, tileLayout]
+    );
+
+    const primaryModes = useMemo(
+        () => browseModes.filter(definition => definition.tier === 'primary'),
+        [browseModes]
+    );
+    const metaModes = useMemo(
+        () => browseModes.filter(definition => definition.tier === 'meta'),
+        [browseModes]
+    );
+
+    // The underlying modes a secondary meta tile offers, resolved through the registry.
+    const activeGroupChildren = useMemo(
+        () => (activeGroup?.children ?? [])
+            .map(child => getBrowseMode(collectionType, child))
+            .filter((definition): definition is BrowseModeDefinition => Boolean(definition)),
+        [activeGroup, collectionType]
     );
 
     const libraryPath = useMemo(
@@ -323,6 +438,17 @@ const Browse: FC = () => {
                 return [];
             }
 
+            if (activePicker.picker.individualYears) {
+                return [...new Set(years)]
+                    .sort((a, b) => b - a)
+                    .map(year => ({
+                        label: String(year),
+                        value: String(year),
+                        Icon: activePicker.Icon,
+                        iconColor: activePicker.iconColor
+                    }));
+            }
+
             const startYears = [...new Set(years.map(year => Math.floor(year / DECADE_LENGTH) * DECADE_LENGTH))];
             startYears.sort((a, b) => b - a);
 
@@ -341,7 +467,7 @@ const Browse: FC = () => {
         }
 
         if (activePicker?.picker?.filter === 'Genres') {
-            return buildGenreOptions(filters?.Genres, activePicker);
+            return buildGenreOptions(filters?.Genres);
         }
 
         if (activePicker?.picker?.filter === 'Studios') {
@@ -415,14 +541,19 @@ const Browse: FC = () => {
         navigate(`${libraryPath}?${params.toString()}`);
     }, [navigate, libraryPath, libraryId, collectionType]);
 
-    const onModeClick = useCallback((definition: BrowseModeDefinition) => {
+    // Opens a leaf mode: a picker opens in place, a view-backed mode opens its tab, a people leaf
+    // opens a grid of persons, and the rest seed the sort and filters of the library's default view.
+    const openLeaf = useCallback((definition: BrowseModeDefinition) => {
         if (definition.picker) {
             setActivePicker(definition);
             return;
         }
 
-        // Modes backed by an existing view open that view's tab; the rest seed the sort and
-        // filters of the library's default view.
+        if (definition.personType) {
+            setActivePersonType(definition);
+            return;
+        }
+
         if (definition.view) {
             const views = LibraryRoutes.find(route => route.type === collectionType)?.views ?? [];
             const index = views.find(view => view.view === definition.view)?.index;
@@ -432,6 +563,26 @@ const Browse: FC = () => {
 
         goToLibrary(definition.settings ? `browseMode=${definition.mode}` : '');
     }, [collectionType, goToLibrary]);
+
+    const onModeClick = useCallback((definition: BrowseModeDefinition) => {
+        // A meta tile with exactly one child opens that child directly (Mood & Tone -> Mood,
+        // Time -> Decades).
+        if (definition.children?.length === 1) {
+            const child = getBrowseMode(collectionType, definition.children[0]);
+            if (child) {
+                openLeaf(child);
+                return;
+            }
+        }
+
+        // A meta tile with several children opens a secondary grid of them.
+        if (definition.children?.length) {
+            setActiveGroup(definition);
+            return;
+        }
+
+        openLeaf(definition);
+    }, [collectionType, openLeaf]);
 
     const onPickClick = useCallback((value: string) => {
         if (!activePicker) {
@@ -456,6 +607,184 @@ const Browse: FC = () => {
         localStorage.setItem('browseTagSort', value);
     }, []);
 
+    const handleBackFromPicker = useCallback(() => setActivePicker(null), []);
+    const handleBackFromGroup = useCallback(() => setActiveGroup(null), []);
+    const handleBackFromPerson = useCallback(() => setActivePersonType(null), []);
+
+    // Three views share the page — a picker, a meta secondary grid, and the home grid. A single
+    // render function keeps the JSX free of nested ternaries.
+    const renderBrowseContent = () => {
+        if (activePersonType) {
+            return (
+                <>
+                    <Stack direction='row' alignItems='center' gap={1}>
+                        <IconButton onClick={handleBackFromPerson} size='small' aria-label={globalize.translate('ButtonBack')}>
+                            <ArrowBack fontSize='small' />
+                        </IconButton>
+                        <Typography variant='h2' sx={{ flexGrow: 1 }}>
+                            {globalize.translate(activePersonType.label)}
+                        </Typography>
+                    </Stack>
+
+                    <PeopleCards
+                        parentId={libraryId ?? undefined}
+                        personType={activePersonType.personType}
+                    />
+                </>
+            );
+        }
+
+        if (activePicker) {
+            return (
+                <>
+                    <Stack direction='row' alignItems='center' gap={1}>
+                        <IconButton onClick={handleBackFromPicker} size='small' aria-label={globalize.translate('ButtonBack')}>
+                            <ArrowBack fontSize='small' />
+                        </IconButton>
+                        <Typography variant='h2' sx={{ flexGrow: 1 }}>
+                            {globalize.translate(activePicker.label)}
+                        </Typography>
+                        {isTagPicker && (
+                            <>
+                                <Tooltip title='Shuffle tags'>
+                                    <IconButton onClick={handleShuffle} size='small'>
+                                        <Shuffle fontSize='small' />
+                                    </IconButton>
+                                </Tooltip>
+                                <FormControl size='small' sx={{ minWidth: 130 }}>
+                                    <Select
+                                        value={tagSort}
+                                        onChange={handleSortChange}
+                                        inputProps={{ 'aria-label': 'Sort order' }}
+                                    >
+                                        <MenuItem value='random'>Random</MenuItem>
+                                        <MenuItem value='az'>A — Z</MenuItem>
+                                        <MenuItem value='za'>Z — A</MenuItem>
+                                        <MenuItem value='most'>Most items</MenuItem>
+                                        <MenuItem value='fewest'>Fewest items</MenuItem>
+                                    </Select>
+                                </FormControl>
+                                <Tooltip title={pickerView === 'ribbons' ? 'Switch to grid' : 'Switch to shelves'}>
+                                    <IconButton onClick={togglePickerView} size='small'>
+                                        {pickerView === 'ribbons' ? <ViewModule fontSize='small' /> : <ViewStream fontSize='small' />}
+                                    </IconButton>
+                                </Tooltip>
+                            </>
+                        )}
+                    </Stack>
+
+                    {isTagPicker && pickerView === 'ribbons' ? (
+                        <Stack spacing={2}>
+                            {pickOptions.slice(0, displayCount).map(option => (
+                                <TagRibbonsSection
+                                    key={option.value}
+                                    tagName={option.value}
+                                    parentId={libraryId ?? ''}
+                                    collectionType={collectionType ?? undefined}
+                                    itemType={itemKind ? [itemKind] : []}
+                                />
+                            ))}
+                            {displayCount < pickOptions.length && (
+                                <Box ref={sentinelRef} sx={{ height: 1 }} />
+                            )}
+                        </Stack>
+                    ) : (
+                        <>
+                            <TileGrid>
+                                {pickOptions.slice(0, displayCount).map(option => (
+                                    <PickTile
+                                        key={option.value}
+                                        label={option.label}
+                                        value={option.value}
+                                        Icon={option.Icon}
+                                        iconColor={option.iconColor}
+                                        count={pickerCounts[option.value] ?? pickerCounts[option.label]}
+                                        onSelect={onPickClick}
+                                    />
+                                ))}
+                            </TileGrid>
+                            {displayCount < pickOptions.length && (
+                                <Box ref={sentinelRef} sx={{ height: 1 }} />
+                            )}
+                        </>
+                    )}
+                </>
+            );
+        }
+
+        if (activeGroup) {
+            return (
+                <>
+                    <Stack direction='row' alignItems='center' gap={1}>
+                        <IconButton onClick={handleBackFromGroup} size='small' aria-label={globalize.translate('ButtonBack')}>
+                            <ArrowBack fontSize='small' />
+                        </IconButton>
+                        <Typography variant='h2' sx={{ flexGrow: 1 }}>
+                            {globalize.translate(activeGroup.label)}
+                        </Typography>
+                    </Stack>
+
+                    <TileGrid>
+                        {activeGroupChildren.map(definition => (
+                            <BrowseModeTile
+                                key={definition.mode}
+                                definition={definition}
+                                onSelect={onModeClick}
+                            />
+                        ))}
+                    </TileGrid>
+                </>
+            );
+        }
+
+        return (
+            <>
+                <PrimaryTileGrid>
+                    {primaryModes.map(definition => (
+                        <BrowseModeTile
+                            key={definition.mode}
+                            definition={definition}
+                            onSelect={onModeClick}
+                            iconSize='7rem'
+                            labelSize='2.8rem'
+                        />
+                    ))}
+                </PrimaryTileGrid>
+
+                <Divider sx={{ my: 2, borderBottomWidth: 2 }} />
+
+                <Typography variant='h2' sx={HEADING_BAR}>
+                    {globalize.translate('BrowseModeSectionBrowseBy')}
+                </Typography>
+                <Stack spacing={1.5}>
+                    {metaModes
+                        .filter(definition => definition.inline)
+                        .map(definition => (
+                            <InlineModeLinks
+                                key={definition.mode}
+                                definition={definition}
+                                children={(definition.children ?? [])
+                                    .map(child => getBrowseMode(collectionType, child))
+                                    .filter((child): child is BrowseModeDefinition => Boolean(child))}
+                                onSelect={openLeaf}
+                            />
+                        ))}
+                </Stack>
+                <TileGrid>
+                    {metaModes
+                        .filter(definition => !definition.inline)
+                        .map(definition => (
+                            <BrowseModeTile
+                                key={definition.mode}
+                                definition={definition}
+                                onSelect={onModeClick}
+                            />
+                        ))}
+                </TileGrid>
+            </>
+        );
+    };
+
     return (
         <Page
             id='browseModesPage'
@@ -464,92 +793,11 @@ const Browse: FC = () => {
         >
             <Box className='padded-left padded-right padded-top padded-bottom-page'>
                 <Stack spacing={3}>
-                    <Typography variant='h1'>
+                    <Typography variant='h1' sx={{ ...HEADING_BAR, fontSize: '2.4rem' }}>
                         {library?.Name ?? globalize.translate('HeaderBrowseBy')}
                     </Typography>
 
-                    {activePicker ? (
-                        <>
-                            <Stack direction='row' alignItems='center' gap={1}>
-                                <Typography variant='h2' sx={{ flexGrow: 1 }}>
-                                    {globalize.translate(activePicker.label)}
-                                </Typography>
-                                {isTagPicker && (
-                                    <>
-                                        <Tooltip title='Shuffle tags'>
-                                            <IconButton onClick={handleShuffle} size='small'>
-                                                <Shuffle fontSize='small' />
-                                            </IconButton>
-                                        </Tooltip>
-                                        <FormControl size='small' sx={{ minWidth: 130 }}>
-                                            <Select
-                                                value={tagSort}
-                                                onChange={handleSortChange}
-                                                inputProps={{ 'aria-label': 'Sort order' }}
-                                            >
-                                                <MenuItem value='random'>Random</MenuItem>
-                                                <MenuItem value='az'>A — Z</MenuItem>
-                                                <MenuItem value='za'>Z — A</MenuItem>
-                                                <MenuItem value='most'>Most items</MenuItem>
-                                                <MenuItem value='fewest'>Fewest items</MenuItem>
-                                            </Select>
-                                        </FormControl>
-                                        <Tooltip title={pickerView === 'ribbons' ? 'Switch to grid' : 'Switch to shelves'}>
-                                            <IconButton onClick={togglePickerView} size='small'>
-                                                {pickerView === 'ribbons' ? <ViewModule fontSize='small' /> : <ViewStream fontSize='small' />}
-                                            </IconButton>
-                                        </Tooltip>
-                                    </>
-                                )}
-                            </Stack>
-
-                            {isTagPicker && pickerView === 'ribbons' ? (
-                                <Stack spacing={2}>
-                                    {pickOptions.slice(0, displayCount).map(option => (
-                                        <TagRibbonsSection
-                                            key={option.value}
-                                            tagName={option.value}
-                                            parentId={libraryId ?? ''}
-                                            collectionType={collectionType ?? undefined}
-                                            itemType={itemKind ? [itemKind] : []}
-                                        />
-                                    ))}
-                                    {displayCount < pickOptions.length && (
-                                        <Box ref={sentinelRef} sx={{ height: 1 }} />
-                                    )}
-                                </Stack>
-                            ) : (
-                                <>
-                                    <TileGrid>
-                                        {pickOptions.slice(0, displayCount).map(option => (
-                                            <PickTile
-                                                key={option.value}
-                                                label={option.label}
-                                                value={option.value}
-                                                Icon={option.Icon}
-                                                iconColor={option.iconColor}
-                                                count={pickerCounts[option.value] ?? pickerCounts[option.label]}
-                                                onSelect={onPickClick}
-                                            />
-                                        ))}
-                                    </TileGrid>
-                                    {displayCount < pickOptions.length && (
-                                        <Box ref={sentinelRef} sx={{ height: 1 }} />
-                                    )}
-                                </>
-                            )}
-                        </>
-                    ) : (
-                        <TileGrid>
-                            {browseModes?.map(definition => (
-                                <BrowseModeTile
-                                    key={definition.mode}
-                                    definition={definition}
-                                    onSelect={onModeClick}
-                                />
-                            ))}
-                        </TileGrid>
-                    )}
+                    {renderBrowseContent()}
                 </Stack>
             </Box>
         </Page>

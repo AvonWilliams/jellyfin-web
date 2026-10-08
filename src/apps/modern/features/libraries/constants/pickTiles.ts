@@ -1,6 +1,7 @@
 import type { SvgIconComponent } from '@mui/icons-material';
 import Album from '@mui/icons-material/Album';
 import CameraRoll from '@mui/icons-material/CameraRoll';
+import Category from '@mui/icons-material/Category';
 import ChildCare from '@mui/icons-material/ChildCare';
 import Explicit from '@mui/icons-material/Explicit';
 import FamilyRestroom from '@mui/icons-material/FamilyRestroom';
@@ -14,6 +15,22 @@ import Theaters from '@mui/icons-material/Theaters';
 import Tv from '@mui/icons-material/Tv';
 import Videocam from '@mui/icons-material/Videocam';
 import Warning from '@mui/icons-material/Warning';
+import {
+    ActionGenreIcon,
+    AdventureGenreIcon,
+    AnimationGenreIcon,
+    ComedyGenreIcon,
+    CrimeGenreIcon,
+    DocumentaryGenreIcon,
+    DramaGenreIcon,
+    FamilyGenreIcon,
+    FantasyGenreIcon,
+    HorrorGenreIcon,
+    MysteryGenreIcon,
+    RomanceGenreIcon,
+    SciFiGenreIcon,
+    ThrillerGenreIcon
+} from 'assets/icons/genres/genreIcons';
 
 export interface PickTileStyle {
     Icon: SvgIconComponent;
@@ -50,6 +67,47 @@ export const getDecadeStyle = (startYear: number): PickTileStyle => {
 
     return DECADE_STYLES.find(([decade]) => decade === startYear)?.[1] ?? NEWEST_DECADE_STYLE;
 };
+
+/**
+ * The single purple used for every genre icon. The icon shape is the differentiator, so all
+ * genres share this colour for a coherent grid.
+ */
+const GENRE_ICON_COLOR = '#C07CD6';
+
+/**
+ * How each genre is drawn, keyed by its normalised name (lowercase, non-letters stripped).
+ * Aliases cover the common alternate spellings, so "Science Fiction" and "SciFi" both resolve to
+ * the sci-fi icon and "Romantic" to the romance one.
+ */
+const GENRE_STYLES: Readonly<Record<string, PickTileStyle>> = {
+    action: { Icon: ActionGenreIcon, iconColor: GENRE_ICON_COLOR },
+    adventure: { Icon: AdventureGenreIcon, iconColor: GENRE_ICON_COLOR },
+    animation: { Icon: AnimationGenreIcon, iconColor: GENRE_ICON_COLOR },
+    animated: { Icon: AnimationGenreIcon, iconColor: GENRE_ICON_COLOR },
+    comedy: { Icon: ComedyGenreIcon, iconColor: GENRE_ICON_COLOR },
+    crime: { Icon: CrimeGenreIcon, iconColor: GENRE_ICON_COLOR },
+    documentary: { Icon: DocumentaryGenreIcon, iconColor: GENRE_ICON_COLOR },
+    drama: { Icon: DramaGenreIcon, iconColor: GENRE_ICON_COLOR },
+    family: { Icon: FamilyGenreIcon, iconColor: GENRE_ICON_COLOR },
+    fantasy: { Icon: FantasyGenreIcon, iconColor: GENRE_ICON_COLOR },
+    horror: { Icon: HorrorGenreIcon, iconColor: GENRE_ICON_COLOR },
+    mystery: { Icon: MysteryGenreIcon, iconColor: GENRE_ICON_COLOR },
+    romance: { Icon: RomanceGenreIcon, iconColor: GENRE_ICON_COLOR },
+    romantic: { Icon: RomanceGenreIcon, iconColor: GENRE_ICON_COLOR },
+    scifi: { Icon: SciFiGenreIcon, iconColor: GENRE_ICON_COLOR },
+    sciencefiction: { Icon: SciFiGenreIcon, iconColor: GENRE_ICON_COLOR },
+    thriller: { Icon: ThrillerGenreIcon, iconColor: GENRE_ICON_COLOR }
+};
+
+/** Genres without a dedicated icon share the generic category glyph. */
+const FALLBACK_GENRE_STYLE: PickTileStyle = { Icon: Category, iconColor: GENRE_ICON_COLOR };
+
+/** Normalises a genre name for lookup: case-insensitive with punctuation and spacing ignored. */
+const normalizeGenre = (genre: string): string =>
+    genre.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+
+export const getGenreStyle = (genre: string): PickTileStyle =>
+    GENRE_STYLES[normalizeGenre(genre)] ?? FALLBACK_GENRE_STYLE;
 
 /**
  * Age ratings graded by how restrictive they are, from everyone through to adults only.
