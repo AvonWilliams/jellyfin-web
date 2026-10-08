@@ -901,3 +901,51 @@ button::-moz-focus-inner {
     text-align: center;
     pointer-events: none;
 }
+
+// External "coming soon" tiles surfaced in ranked lists (titles not in the library).
+.comingSoonCard {
+    cursor: default;
+}
+
+.comingSoonPoster {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    object-fit: cover;
+    border: none;
+    filter: grayscale(0.55) brightness(0.62);
+}
+
+.comingSoonPlaceholder {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5em;
+    text-align: center;
+    background-color: #242424;
+    color: #888;
+}
+
+.comingSoonBanner {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
+    padding: 0.4em 0.3em;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0));
+    color: #fff;
+    font-size: 0.85em;
+    font-weight: 600;
+    text-align: center;
+    pointer-events: none;
+}
