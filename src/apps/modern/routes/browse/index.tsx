@@ -695,7 +695,7 @@ const Browse: FC = () => {
 
         return (
             <>
-                <Typography variant='h2'>
+                <Typography variant='h2' sx={{ textAlign: 'center', textShadow: '0 2px 6px rgba(0, 0, 0, 0.8)' }}>
                     {globalize.translate('BrowseModeSectionQuickAccess')}
                 </Typography>
                 <PrimaryTileGrid>
@@ -704,15 +704,15 @@ const Browse: FC = () => {
                             key={definition.mode}
                             definition={definition}
                             onSelect={onModeClick}
-                            iconSize='3.5rem'
-                            labelSize='1.4rem'
+                            iconSize='4.66rem'
+                            labelSize='1.86rem'
                         />
                     ))}
                 </PrimaryTileGrid>
 
                 <Divider sx={{ my: 2, borderBottomWidth: 2 }} />
 
-                <Typography variant='h2'>
+                <Typography variant='h2' sx={{ textAlign: 'center', textShadow: '0 2px 6px rgba(0, 0, 0, 0.8)' }}>
                     {globalize.translate('BrowseModeSectionBrowseBy')}
                 </Typography>
                 <TileGrid>
@@ -736,7 +736,7 @@ const Browse: FC = () => {
         >
             <Box className='padded-left padded-right padded-top padded-bottom-page'>
                 <Stack spacing={3}>
-                    <Typography variant='h1'>
+                    <Typography variant='h1' sx={{ textAlign: 'center', textShadow: '0 2px 8px rgba(0, 0, 0, 0.85)' }}>
                         {library?.Name ?? globalize.translate('HeaderBrowseBy')}
                     </Typography>
 
