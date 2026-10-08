@@ -917,6 +917,7 @@ button::-moz-focus-inner {
     object-fit: cover;
     border: none;
     filter: grayscale(0.55) brightness(0.5);
+    opacity: 0.35;
 }
 
 .comingSoonPlaceholder {
@@ -944,9 +945,9 @@ button::-moz-focus-inner {
     // of the card width, centered and rotated to that angle, spans ~66% of the full diagonal.
     width: 119%;
     padding: 0.4em 0.3em;
-    background-color: rgba(0, 0, 0, 0.85);
-    color: #fff;
-    font-size: 0.85em;
+    background-color: rgba(0, 0, 0, 0.25);
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 1.5em;
     font-weight: 600;
     line-height: 1.3;
     text-align: center;
