@@ -1,5 +1,6 @@
 import { BaseItemKind } from '@jellyfin/sdk/lib/generated-client/models/base-item-kind';
 import { CollectionType } from '@jellyfin/sdk/lib/generated-client/models/collection-type';
+import type { PersonKind } from '@jellyfin/sdk/lib/generated-client/models/person-kind';
 import Box from '@mui/material/Box';
 import ButtonBase from '@mui/material/ButtonBase';
 import Divider from '@mui/material/Divider';
@@ -21,8 +22,11 @@ import { applyBrowseModeOrder, getBrowseMode, getBrowseModes } from 'apps/modern
 import { getDecadeStyle, getRatingStyle, toTitleCase } from 'apps/modern/features/libraries/constants/pickTiles';
 import TagRibbonsSection from 'apps/modern/features/libraries/components/TagRibbonsSection';
 import { LibraryRoutes } from 'apps/modern/features/libraries/constants/libraryRoutes';
+import { buildPeopleCards } from 'components/cardbuilder/peoplecardbuilder';
+import { CardShape } from 'components/cardbuilder/utils/shape';
+import Loading from 'components/loading/LoadingComponent';
 import Page from 'components/Page';
-import { useGetQueryFiltersLegacy, useGetStudios } from 'hooks/useFetchItems';
+import { useGetPersons, useGetQueryFiltersLegacy, useGetStudios } from 'hooks/useFetchItems';
 import { useApi } from 'hooks/useApi';
 import { useItem } from 'hooks/useItem';
 import globalize from 'lib/globalize';
@@ -161,12 +165,47 @@ const TileGrid: FC<{ children: React.ReactNode }> = ({ children }) => (
     </Box>
 );
 
+/** Lists the library's people of one kind (Actor/Director/Writer) as clickable person cards. */
+const PeopleCards: FC<{ parentId?: string; personType?: PersonKind }> = ({ parentId, personType }) => {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const { data: people, isPending } = useGetPersons(parentId, personType);
+
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!container || isPending || !people?.length) {
+            return;
+        }
+
+        buildPeopleCards(people, {
+            itemsContainer: container,
+            coverImage: true,
+            shape: CardShape.PortraitOverflow
+        });
+    }, [people, isPending]);
+
+    if (isPending) {
+        return <Loading />;
+    }
+
+    if (!people?.length) {
+        return (
+            <Typography sx={{ color: 'text.secondary' }}>
+                {globalize.translate('MessageNothingHere')}
+            </Typography>
+        );
+    }
+
+    return <div ref={containerRef} className='itemsContainer vertical-wrap' />;
+};
+
 const Browse: FC = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const [activePicker, setActivePicker] = useState<BrowseModeDefinition | null>(null);
     // A "Browse by…" meta tile with several children, rendered as a secondary grid.
     const [activeGroup, setActiveGroup] = useState<BrowseModeDefinition | null>(null);
+    // A People leaf (Actors/Directors/Writers), rendered as a grid of person cards.
+    const [activePersonType, setActivePersonType] = useState<BrowseModeDefinition | null>(null);
 
     // Grid vs. ribbon view toggle, persisted across visits.
     const [pickerView, setPickerView] = useState<'grid' | 'ribbons'>(
@@ -229,8 +268,7 @@ const Browse: FC = () => {
         [browseModes]
     );
 
-    // The underlying modes a secondary meta tile offers. People's children (Actors, Directors,
-    // Writers) have no definitions yet, so it resolves to an empty grid until that later step.
+    // The underlying modes a secondary meta tile offers, resolved through the registry.
     const activeGroupChildren = useMemo(
         () => (activeGroup?.children ?? [])
             .map(child => getBrowseMode(collectionType, child))
@@ -437,11 +475,16 @@ const Browse: FC = () => {
         navigate(`${libraryPath}?${params.toString()}`);
     }, [navigate, libraryPath, libraryId, collectionType]);
 
-    // Opens a leaf mode: a picker opens in place, a view-backed mode opens its tab, and the rest
-    // seed the sort and filters of the library's default view.
+    // Opens a leaf mode: a picker opens in place, a view-backed mode opens its tab, a people leaf
+    // opens a grid of persons, and the rest seed the sort and filters of the library's default view.
     const openLeaf = useCallback((definition: BrowseModeDefinition) => {
         if (definition.picker) {
             setActivePicker(definition);
+            return;
+        }
+
+        if (definition.personType) {
+            setActivePersonType(definition);
             return;
         }
 
@@ -500,10 +543,31 @@ const Browse: FC = () => {
 
     const handleBackFromPicker = useCallback(() => setActivePicker(null), []);
     const handleBackFromGroup = useCallback(() => setActiveGroup(null), []);
+    const handleBackFromPerson = useCallback(() => setActivePersonType(null), []);
 
     // Three views share the page — a picker, a meta secondary grid, and the home grid. A single
     // render function keeps the JSX free of nested ternaries.
     const renderBrowseContent = () => {
+        if (activePersonType) {
+            return (
+                <>
+                    <Stack direction='row' alignItems='center' gap={1}>
+                        <IconButton onClick={handleBackFromPerson} size='small' aria-label={globalize.translate('ButtonBack')}>
+                            <ArrowBack fontSize='small' />
+                        </IconButton>
+                        <Typography variant='h2' sx={{ flexGrow: 1 }}>
+                            {globalize.translate(activePersonType.label)}
+                        </Typography>
+                    </Stack>
+
+                    <PeopleCards
+                        parentId={libraryId ?? undefined}
+                        personType={activePersonType.personType}
+                    />
+                </>
+            );
+        }
+
         if (activePicker) {
             return (
                 <>
