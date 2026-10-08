@@ -751,7 +751,7 @@ const Browse: FC = () => {
                             definition={definition}
                             onSelect={onModeClick}
                             iconSize='7rem'
-                            labelSize='2.5rem'
+                            labelSize='2.1rem'
                         />
                     ))}
                 </PrimaryTileGrid>
