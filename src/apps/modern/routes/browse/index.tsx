@@ -130,7 +130,7 @@ const Tile: FC<TileProps> = ({ label, Icon, iconColor, iconSize, labelSize, coun
         }}
     >
         {Icon ? <Icon sx={{ fontSize: iconSize ?? '3.75rem', color: iconColor }} /> : null}
-        <Typography variant='subtitle1' sx={{ textAlign: 'center', lineHeight: 1.2, fontSize: labelSize ?? '1.5rem' }}>
+        <Typography variant='subtitle1' sx={{ textAlign: 'center', lineHeight: 1.2, fontSize: labelSize ?? '1.5rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
             {label}
         </Typography>
         {count !== undefined ? (
@@ -751,7 +751,7 @@ const Browse: FC = () => {
                             definition={definition}
                             onSelect={onModeClick}
                             iconSize='7rem'
-                            labelSize='2.8rem'
+                            labelSize='2.5rem'
                         />
                     ))}
                 </PrimaryTileGrid>
