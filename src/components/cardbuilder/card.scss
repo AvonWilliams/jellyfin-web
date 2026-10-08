@@ -907,6 +907,12 @@ button::-moz-focus-inner {
     cursor: default;
 }
 
+/* The poster sits on a solid scrim so its transparency reads as a ghost against the card,
+   not against the page background. */
+.comingSoonCard .cardImageContainer {
+    background-color: rgba(50, 10, 10, 0.5);
+}
+
 .comingSoonPoster {
     position: absolute;
     top: 0;
@@ -916,7 +922,7 @@ button::-moz-focus-inner {
     z-index: 0;
     object-fit: cover;
     border: none;
-    opacity: 0.45;
+    opacity: 0.3;
 }
 
 .comingSoonPlaceholder {
