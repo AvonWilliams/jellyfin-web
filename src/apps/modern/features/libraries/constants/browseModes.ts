@@ -1,16 +1,20 @@
 import { CollectionType } from '@jellyfin/sdk/lib/generated-client/models/collection-type';
 import { ItemFilter } from '@jellyfin/sdk/lib/generated-client/models/item-filter';
 import { ItemSortBy } from '@jellyfin/sdk/lib/generated-client/models/item-sort-by';
+import { PersonKind } from '@jellyfin/sdk/lib/generated-client/models/person-kind';
 import { SortOrder } from '@jellyfin/sdk/lib/generated-client/models/sort-order';
 import Apps from '@mui/icons-material/Apps';
 import Business from '@mui/icons-material/Business';
 import CalendarMonth from '@mui/icons-material/CalendarMonth';
 import Category from '@mui/icons-material/Category';
+import Edit from '@mui/icons-material/Edit';
 import FiberNew from '@mui/icons-material/FiberNew';
 import FamilyRestroom from '@mui/icons-material/FamilyRestroom';
 import Group from '@mui/icons-material/Group';
 import History from '@mui/icons-material/History';
+import Movie from '@mui/icons-material/Movie';
 import NewReleases from '@mui/icons-material/NewReleases';
+import Person from '@mui/icons-material/Person';
 import Shuffle from '@mui/icons-material/Shuffle';
 import MilitaryTech from '@mui/icons-material/MilitaryTech';
 import Reviews from '@mui/icons-material/Reviews';
@@ -264,6 +268,35 @@ export const byPeopleMode: BrowseModeDefinition = {
     children: [BrowseMode.Actors, BrowseMode.Directors, BrowseMode.Writers]
 };
 
+// People leaves, offered through the People meta tile. Each lists the library's persons of that
+// kind (via the /Persons endpoint) and links to the person's detail page.
+const actorsMode: BrowseModeDefinition = {
+    mode: BrowseMode.Actors,
+    label: 'BrowseModeActors',
+    Icon: Person,
+    iconColor: '#9CCC65',
+    tier: 'meta',
+    personType: PersonKind.Actor
+};
+
+const directorsMode: BrowseModeDefinition = {
+    mode: BrowseMode.Directors,
+    label: 'BrowseModeDirectors',
+    Icon: Movie,
+    iconColor: '#4DD0C4',
+    tier: 'meta',
+    personType: PersonKind.Director
+};
+
+const writersMode: BrowseModeDefinition = {
+    mode: BrowseMode.Writers,
+    label: 'BrowseModeWriters',
+    Icon: Edit,
+    iconColor: '#F2C14E',
+    tier: 'meta',
+    personType: PersonKind.Writer
+};
+
 export const byTimeMode: BrowseModeDefinition = {
     mode: BrowseMode.ByTime,
     label: 'BrowseModeTime',
@@ -340,7 +373,10 @@ const underlyingModes: BrowseModeDefinition[] = [
     decadesMode,
     hiddenGemsMode,
     ageRatingMode,
-    watchAgainMode
+    watchAgainMode,
+    actorsMode,
+    directorsMode,
+    writersMode
 ];
 
 /** Every mode a collection type can resolve, including the underlying modes reached under meta tiles. */

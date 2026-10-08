@@ -1,4 +1,5 @@
 import type { SvgIconComponent } from '@mui/icons-material';
+import type { PersonKind } from '@jellyfin/sdk/lib/generated-client/models/person-kind';
 
 import type { LibraryViewSettings } from './library';
 import type { LibraryTab } from './libraryTab';
@@ -69,4 +70,6 @@ export interface BrowseModeDefinition {
     children?: readonly BrowseMode[];
     /** Source used for ranked fetches (e.g. Discover endpoints). Defaults to 'tmdb'. */
     source?: string;
+    /** For a people leaf (Actors/Directors/Writers): the person kind to list. */
+    personType?: PersonKind;
 }
