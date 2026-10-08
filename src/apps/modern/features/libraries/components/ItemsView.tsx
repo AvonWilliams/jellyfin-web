@@ -1,12 +1,16 @@
 import { ImageType } from '@jellyfin/sdk/lib/generated-client/models/image-type';
 import { ItemSortBy } from '@jellyfin/sdk/lib/generated-client/models/item-sort-by';
 import Box from '@mui/material/Box';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import Switch from '@mui/material/Switch';
 import classNames from 'classnames';
 import React, { type FC, SetStateAction, useCallback, useMemo } from 'react';
+import { useLocalStorage } from 'usehooks-ts';
 
 import { useLibrary } from 'apps/modern/features/libraries/hooks/useLibrary';
 import { getDefaultLibraryViewSettings } from 'apps/modern/features/libraries/utils/settings';
 import BrowseSourceBar from 'apps/modern/features/libraries/components/BrowseSourceBar';
+import ComingSoonCard from 'apps/modern/features/libraries/components/ComingSoonCard';
 import { DEFAULT_BROWSE_SOURCE, ENABLED_BROWSE_SOURCES } from 'apps/modern/features/libraries/constants/browseSources';
 import Cards from 'components/cardbuilder/Card/Cards';
 import { CardShape } from 'components/cardbuilder/utils/shape';
@@ -16,7 +20,9 @@ import Loading from 'components/loading/LoadingComponent';
 import { ItemAction } from 'constants/itemAction';
 import ItemsContainer from 'elements/emby-itemscontainer/ItemsContainer';
 import { useApi } from 'hooks/useApi';
+import globalize from 'lib/globalize';
 import type { CardOptions } from 'types/cardOptions';
+import type { DiscoverRankedResult } from 'types/discover';
 import { type LibraryViewSettings, ViewMode } from 'types/library';
 import { LibraryTab } from 'types/libraryTab';
 import type { ListOptions } from 'types/listOptions';
@@ -54,6 +60,17 @@ const ItemsView: FC = () => {
     ].join(', '));
 
     const { __legacyApiClient__, user } = useApi();
+
+    // Per-user client toggle for missing titles; hiding them never changes the server default.
+    const [showMissing, setShowMissing] = useLocalStorage<boolean>(
+        `browseShowMissing-${user?.Id ?? 'default'}`,
+        true
+    );
+
+    // The ranked discover response carries external "missing" stubs alongside in-library items.
+    const discover = isRankedView ? (itemsResult?.data as DiscoverRankedResult | undefined) : undefined;
+    const visibleMissing = isRankedView && showMissing ? (discover?.Missing ?? []) : [];
+    const hasItems = Boolean(itemsResult?.data?.Items?.length);
 
     // The query key for all items for the current user.
     // This should be used to invalidate queries that affect multiple parents, such as collections and playlists.
@@ -165,7 +182,7 @@ const ItemsView: FC = () => {
     ]);
 
     const getItems = useCallback(() => {
-        if (!itemsResult?.data?.Items?.length) {
+        if (!hasItems && visibleMissing.length === 0) {
             return <NoItemsMessage message={noItemsMessage ?? 'MessageNoItemsAvailable'} />;
         }
 
@@ -184,6 +201,8 @@ const ItemsView: FC = () => {
             />
         );
     }, [
+        hasItems,
+        visibleMissing,
         libraryViewSettings.ViewMode,
         itemsResult?.data?.Items,
         getListOptions,
@@ -218,11 +237,29 @@ const ItemsView: FC = () => {
             )}
 
             {isRankedView && setSource && (
-                <Box sx={{ marginBottom: 2 }}>
+                <Box
+                    sx={{
+                        marginBottom: 2,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        flexWrap: 'wrap',
+                        gap: 1
+                    }}
+                >
                     <BrowseSourceBar
                         sources={ENABLED_BROWSE_SOURCES}
                         activeSource={source ?? DEFAULT_BROWSE_SOURCE}
                         onChange={setSource}
+                    />
+                    <FormControlLabel
+                        control={
+                            <Switch
+                                checked={showMissing}
+                                onChange={(_event, checked) => setShowMissing(checked)}
+                            />
+                        }
+                        label={globalize.translate('ShowMissingTitles')}
                     />
                 </Box>
             )}
@@ -237,6 +274,12 @@ const ItemsView: FC = () => {
                     queryKey={allItemsQueryKey}
                 >
                     {getItems()}
+                    {visibleMissing.map(title => (
+                        <ComingSoonCard
+                            key={`${title.Source ?? 'missing'}-${title.Rank ?? title.Title}`}
+                            title={title}
+                        />
+                    ))}
                 </ItemsContainer>
             )}
         </Box>
