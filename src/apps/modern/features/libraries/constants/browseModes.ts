@@ -101,6 +101,15 @@ const decadesMode: BrowseModeDefinition = {
     picker: { filter: 'Years' }
 };
 
+const yearMode: BrowseModeDefinition = {
+    mode: BrowseMode.Year,
+    label: 'BrowseModeYear',
+    Icon: CalendarMonth,
+    iconColor: '#7E9CD8',
+    tier: 'meta',
+    picker: { filter: 'Years', individualYears: true }
+};
+
 const trendingMode: BrowseModeDefinition = {
     mode: BrowseMode.Trending,
     label: 'BrowseModeTrending',
@@ -303,7 +312,7 @@ export const byTimeMode: BrowseModeDefinition = {
     Icon: CalendarMonth,
     iconColor: '#7E9CD8',
     tier: 'meta',
-    children: [BrowseMode.Decades]
+    children: [BrowseMode.Decades, BrowseMode.Year]
 };
 
 export const byQualityMode: BrowseModeDefinition = {
@@ -371,6 +380,7 @@ const underlyingModes: BrowseModeDefinition[] = [
     worldsMode,
     stylesMode,
     decadesMode,
+    yearMode,
     hiddenGemsMode,
     ageRatingMode,
     watchAgainMode,

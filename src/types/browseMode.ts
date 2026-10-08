@@ -19,6 +19,7 @@ export enum BrowseMode {
     CriticsPicks = 'criticspicks',
     WatchAgain = 'recentlyplayed',
     Decades = 'decades',
+    Year = 'years',
     AgeRating = 'agerating',
     Trending = 'trending',
     Mood = 'mood',
@@ -48,6 +49,8 @@ export interface BrowsePicker {
     filter: 'Years' | 'OfficialRatings' | 'Tags' | 'Genres' | 'Studios';
     /** Curated tag list to intersect against the library's available tags. */
     tagList?: readonly string[];
+    /** For a 'Years' picker: list individual years instead of bucketing them into decades. */
+    individualYears?: boolean;
 }
 
 export interface BrowseModeDefinition {
