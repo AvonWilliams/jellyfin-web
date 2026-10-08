@@ -233,6 +233,7 @@ const fetchDiscoverList = (
     viewType: LibraryTab,
     parentId: ParentId,
     itemType: BaseItemKind[],
+    source: string | undefined,
     options?: AxiosRequestConfig
 ) => {
     const list = viewType === LibraryTab.TopRated ? 'TopRated' : 'Trending';
@@ -245,7 +246,8 @@ const fetchDiscoverList = (
                 userId,
                 parentId: parentId ?? undefined,
                 fields: ItemFields.PrimaryImageAspectRatio,
-                limit: 500
+                limit: 500,
+                source
             },
             headers: { Authorization: api.authorizationHeader },
             signal: options?.signal
@@ -259,6 +261,7 @@ const fetchGetItemsViewByType = async (
     parentId: ParentId,
     itemType: BaseItemKind[],
     libraryViewSettings: LibraryViewSettings,
+    source: string | undefined,
     options?: AxiosRequestConfig
 ) => {
     const { api, user } = currentApi;
@@ -396,7 +399,7 @@ const fetchGetItemsViewByType = async (
                 break;
             case LibraryTab.Trending:
             case LibraryTab.TopRated:
-                response = await fetchDiscoverList(api, user.Id, viewType, parentId, itemType, options);
+                response = await fetchDiscoverList(api, user.Id, viewType, parentId, itemType, source, options);
                 break;
             default: {
                 response = await getLibraryApi(api).getItems(
@@ -433,7 +436,8 @@ export const useGetItemsViewByType = (
     viewType: LibraryTab | undefined,
     parentId: ParentId,
     itemType: BaseItemKind[] = [],
-    libraryViewSettings: LibraryViewSettings
+    libraryViewSettings: LibraryViewSettings,
+    source?: string
 ) => {
     const currentApi = useApi();
     return useQuery({
@@ -446,7 +450,8 @@ export const useGetItemsViewByType = (
             viewType,
             {
                 itemType,
-                libraryViewSettings
+                libraryViewSettings,
+                source
             }
         ],
         queryFn: ({ signal }) =>
@@ -456,6 +461,7 @@ export const useGetItemsViewByType = (
                 parentId,
                 itemType,
                 libraryViewSettings!,
+                source,
                 { signal }
             ),
         refetchOnWindowFocus: false,
