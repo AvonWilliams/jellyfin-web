@@ -274,7 +274,8 @@ export const byPeopleMode: BrowseModeDefinition = {
     Icon: Group,
     iconColor: '#9CCC65',
     tier: 'meta',
-    children: [BrowseMode.Actors, BrowseMode.Directors, BrowseMode.Writers]
+    children: [BrowseMode.Actors, BrowseMode.Directors, BrowseMode.Writers],
+    inline: true
 };
 
 // People leaves, offered through the People meta tile. Each lists the library's persons of that
@@ -312,7 +313,8 @@ export const byTimeMode: BrowseModeDefinition = {
     Icon: CalendarMonth,
     iconColor: '#7E9CD8',
     tier: 'meta',
-    children: [BrowseMode.Decades, BrowseMode.Year]
+    children: [BrowseMode.Decades, BrowseMode.Year],
+    inline: true
 };
 
 export const byQualityMode: BrowseModeDefinition = {
@@ -321,7 +323,8 @@ export const byQualityMode: BrowseModeDefinition = {
     Icon: Reviews,
     iconColor: '#E0533D',
     tier: 'meta',
-    children: [BrowseMode.CriticsPicks, BrowseMode.HiddenGems, BrowseMode.AgeRating, BrowseMode.WatchAgain]
+    children: [BrowseMode.CriticsPicks, BrowseMode.HiddenGems, BrowseMode.AgeRating, BrowseMode.WatchAgain],
+    inline: true
 };
 
 // TV libraries have no Critics' Picks (series rarely carry critic ratings), so the Quality
