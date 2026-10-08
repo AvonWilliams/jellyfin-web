@@ -8,6 +8,7 @@ import CalendarMonth from '@mui/icons-material/CalendarMonth';
 import Category from '@mui/icons-material/Category';
 import FiberNew from '@mui/icons-material/FiberNew';
 import FamilyRestroom from '@mui/icons-material/FamilyRestroom';
+import Group from '@mui/icons-material/Group';
 import History from '@mui/icons-material/History';
 import NewReleases from '@mui/icons-material/NewReleases';
 import Shuffle from '@mui/icons-material/Shuffle';
@@ -36,7 +37,8 @@ const allMode: BrowseModeDefinition = {
     mode: BrowseMode.All,
     label: 'BrowseModeAll',
     Icon: Apps,
-    iconColor: '#B0BEC5'
+    iconColor: '#B0BEC5',
+    tier: 'primary'
 };
 
 const genresMode: BrowseModeDefinition = {
@@ -44,6 +46,7 @@ const genresMode: BrowseModeDefinition = {
     label: 'Genres',
     Icon: Category,
     iconColor: '#C07CD6',
+    tier: 'meta',
     picker: { filter: 'Genres' }
 };
 
@@ -52,6 +55,7 @@ const justAddedMode: BrowseModeDefinition = {
     label: 'BrowseModeJustAdded',
     Icon: FiberNew,
     iconColor: '#4DD0C4',
+    tier: 'primary',
     settings: {
         SortBy: [ItemSortBy.DateCreated],
         SortOrder: SortOrder.Descending,
@@ -64,6 +68,7 @@ const newReleasesMode: BrowseModeDefinition = {
     label: 'BrowseModeNewReleases',
     Icon: NewReleases,
     iconColor: '#6FB3E0',
+    tier: 'primary',
     settings: {
         SortBy: [ItemSortBy.PremiereDate],
         SortOrder: SortOrder.Descending,
@@ -76,6 +81,7 @@ const randomMode: BrowseModeDefinition = {
     label: 'OptionRandom',
     Icon: Shuffle,
     iconColor: '#F08A5D',
+    tier: 'primary',
     settings: {
         SortBy: [ItemSortBy.Random],
         SortOrder: SortOrder.Ascending
@@ -87,6 +93,7 @@ const decadesMode: BrowseModeDefinition = {
     label: 'BrowseModeDecades',
     Icon: CalendarMonth,
     iconColor: '#7E9CD8',
+    tier: 'meta',
     picker: { filter: 'Years' }
 };
 
@@ -95,7 +102,9 @@ const trendingMode: BrowseModeDefinition = {
     label: 'BrowseModeTrending',
     Icon: TrendingUp,
     iconColor: '#5CD672',
-    view: LibraryTab.Trending
+    tier: 'primary',
+    view: LibraryTab.Trending,
+    source: 'tmdb'
 };
 
 const studiosMode: BrowseModeDefinition = {
@@ -103,6 +112,7 @@ const studiosMode: BrowseModeDefinition = {
     label: 'Studios',
     Icon: Business,
     iconColor: '#8D9EC6',
+    tier: 'meta',
     picker: { filter: 'Studios' }
 };
 
@@ -117,6 +127,7 @@ const criticsPicksMode: BrowseModeDefinition = {
     label: 'BrowseModeCriticsPicks',
     Icon: Reviews,
     iconColor: '#E0533D',
+    tier: 'meta',
     settings: {
         SortBy: [ItemSortBy.CriticRating],
         SortOrder: SortOrder.Descending
@@ -128,6 +139,7 @@ const watchAgainMode: BrowseModeDefinition = {
     label: 'BrowseModeWatchAgain',
     Icon: History,
     iconColor: '#86C98B',
+    tier: 'meta',
     settings: {
         SortBy: [ItemSortBy.DatePlayed],
         SortOrder: SortOrder.Descending
@@ -139,6 +151,7 @@ const ageRatingMode: BrowseModeDefinition = {
     label: 'BrowseModeAgeRating',
     Icon: FamilyRestroom,
     iconColor: '#9CCC65',
+    tier: 'meta',
     picker: { filter: 'OfficialRatings' }
 };
 
@@ -147,7 +160,9 @@ const topRatedMode: BrowseModeDefinition = {
     label: 'BrowseModeTopRated',
     Icon: MilitaryTech,
     iconColor: '#EECE55',
-    view: LibraryTab.TopRated
+    tier: 'primary',
+    view: LibraryTab.TopRated,
+    source: 'tmdb'
 };
 
 const moodMode: BrowseModeDefinition = {
@@ -155,6 +170,7 @@ const moodMode: BrowseModeDefinition = {
     label: 'BrowseModeMood',
     Icon: Mood,
     iconColor: '#EC407A',
+    tier: 'meta',
     picker: { filter: 'Tags', tagList: MOOD_TAGS }
 };
 
@@ -163,6 +179,7 @@ const storyThemesMode: BrowseModeDefinition = {
     label: 'BrowseModeStoryThemes',
     Icon: AutoStories,
     iconColor: '#FF7043',
+    tier: 'meta',
     picker: { filter: 'Tags', tagList: STORY_THEME_TAGS }
 };
 
@@ -171,6 +188,7 @@ const plotElementsMode: BrowseModeDefinition = {
     label: 'BrowseModePlotElements',
     Icon: Timeline,
     iconColor: '#26A69A',
+    tier: 'meta',
     picker: { filter: 'Tags', tagList: PLOT_ELEMENT_TAGS }
 };
 
@@ -179,6 +197,7 @@ const worldsMode: BrowseModeDefinition = {
     label: 'BrowseModeWorlds',
     Icon: Public,
     iconColor: '#5C6BC0',
+    tier: 'meta',
     picker: { filter: 'Tags', tagList: WORLD_TAGS }
 };
 
@@ -187,6 +206,7 @@ const stylesMode: BrowseModeDefinition = {
     label: 'BrowseModeStyles',
     Icon: Palette,
     iconColor: '#7E57C2',
+    tier: 'meta',
     picker: { filter: 'Tags', tagList: STYLE_TAGS }
 };
 
@@ -196,11 +216,70 @@ const hiddenGemsMode: BrowseModeDefinition = {
     label: 'BrowseModeHiddenGems',
     Icon: Recommend,
     iconColor: '#F2C14E',
+    tier: 'meta',
     settings: {
         Filters: { Status: [ItemFilter.IsUnplayed] },
         SortBy: [ItemSortBy.CommunityRating],
         SortOrder: SortOrder.Descending
     }
+};
+
+// Meta entry points ("Browse by…" tiles). Each opens the existing underlying mode(s) listed in
+// `children`; the underlying modes' enum values and definitions stay intact for deep links and
+// settings keys. Icon colours reuse the existing palette.
+
+export const byMoodToneMode: BrowseModeDefinition = {
+    mode: BrowseMode.ByMoodTone,
+    label: 'BrowseModeMoodTone',
+    Icon: Mood,
+    iconColor: '#EC407A',
+    tier: 'meta',
+    children: [BrowseMode.Mood]
+};
+
+export const byStoryMode: BrowseModeDefinition = {
+    mode: BrowseMode.ByStory,
+    label: 'BrowseModeStory',
+    Icon: AutoStories,
+    iconColor: '#FF7043',
+    tier: 'meta',
+    children: [BrowseMode.StoryThemes, BrowseMode.PlotElements]
+};
+
+export const byWorldStyleMode: BrowseModeDefinition = {
+    mode: BrowseMode.ByWorldStyle,
+    label: 'BrowseModeWorldStyle',
+    Icon: Public,
+    iconColor: '#5C6BC0',
+    tier: 'meta',
+    children: [BrowseMode.Worlds, BrowseMode.Styles]
+};
+
+export const byPeopleMode: BrowseModeDefinition = {
+    mode: BrowseMode.ByPeople,
+    label: 'BrowseModePeople',
+    Icon: Group,
+    iconColor: '#9CCC65',
+    tier: 'meta',
+    children: [BrowseMode.Actors, BrowseMode.Directors, BrowseMode.Writers]
+};
+
+export const byTimeMode: BrowseModeDefinition = {
+    mode: BrowseMode.ByTime,
+    label: 'BrowseModeTime',
+    Icon: CalendarMonth,
+    iconColor: '#7E9CD8',
+    tier: 'meta',
+    children: [BrowseMode.Decades]
+};
+
+export const byQualityMode: BrowseModeDefinition = {
+    mode: BrowseMode.ByQuality,
+    label: 'BrowseModeQuality',
+    Icon: Reviews,
+    iconColor: '#E0533D',
+    tier: 'meta',
+    children: [BrowseMode.CriticsPicks, BrowseMode.HiddenGems, BrowseMode.AgeRating, BrowseMode.WatchAgain]
 };
 
 const movieBrowseModes: BrowseModeDefinition[] = [
