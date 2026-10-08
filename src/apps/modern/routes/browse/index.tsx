@@ -35,14 +35,16 @@ import type { BrowseModeDefinition } from 'types/browseMode';
 const DECADE_LENGTH = 10;
 
 /**
- * Semi-opaque scrim drawn behind page headings so they stay legible over busy fanart. The grey
- * matches the tile scrim, so the headings sit naturally in the page.
+ * Full-width bar drawn behind page headings so they stay legible over busy fanart. Darker than
+ * the tile scrim so the headings read as a distinct header layer above the tiles.
  */
-const HEADING_SCRIM = {
-    display: 'inline-block',
-    padding: '0.25em 0.75em',
+const HEADING_BAR = {
+    display: 'block',
+    width: '100%',
+    textAlign: 'center',
+    padding: '0.5em 0.75em',
     borderRadius: 2,
-    backgroundColor: 'rgba(52, 52, 52, 0.7)'
+    backgroundColor: 'rgba(24, 24, 24, 0.8)'
 } as const;
 
 /** Maps a picker's filter kind to the server's /Discover/Counts type. */
@@ -122,8 +124,8 @@ const Tile: FC<TileProps> = ({ label, Icon, iconColor, iconSize, labelSize, coun
             }
         }}
     >
-        {Icon ? <Icon sx={{ fontSize: iconSize ?? '2.5rem', color: iconColor }} /> : null}
-        <Typography variant='subtitle1' sx={{ textAlign: 'center', lineHeight: 1.2, fontSize: labelSize }}>
+        {Icon ? <Icon sx={{ fontSize: iconSize ?? '3.75rem', color: iconColor }} /> : null}
+        <Typography variant='subtitle1' sx={{ textAlign: 'center', lineHeight: 1.2, fontSize: labelSize ?? '1.5rem' }}>
             {label}
         </Typography>
         {count !== undefined ? (
@@ -203,7 +205,7 @@ const InlineModeLinks: FC<{
     onSelect: (definition: BrowseModeDefinition) => void;
 }> = ({ definition, children, onSelect }) => (
     <Stack spacing={1}>
-        <Typography variant='h3' sx={{ alignSelf: 'flex-start', ...HEADING_SCRIM }}>
+        <Typography variant='h3' sx={HEADING_BAR}>
             {globalize.translate(definition.label)}
         </Typography>
         <TileGrid>
@@ -737,24 +739,21 @@ const Browse: FC = () => {
 
         return (
             <>
-                <Typography variant='h2' sx={{ alignSelf: 'center', ...HEADING_SCRIM }}>
-                    {globalize.translate('BrowseModeSectionQuickAccess')}
-                </Typography>
                 <PrimaryTileGrid>
                     {primaryModes.map(definition => (
                         <BrowseModeTile
                             key={definition.mode}
                             definition={definition}
                             onSelect={onModeClick}
-                            iconSize='4.66rem'
-                            labelSize='1.86rem'
+                            iconSize='7rem'
+                            labelSize='2.8rem'
                         />
                     ))}
                 </PrimaryTileGrid>
 
                 <Divider sx={{ my: 2, borderBottomWidth: 2 }} />
 
-                <Typography variant='h2' sx={{ alignSelf: 'center', ...HEADING_SCRIM }}>
+                <Typography variant='h2' sx={HEADING_BAR}>
                     {globalize.translate('BrowseModeSectionBrowseBy')}
                 </Typography>
                 <Stack spacing={1.5}>
@@ -794,7 +793,7 @@ const Browse: FC = () => {
         >
             <Box className='padded-left padded-right padded-top padded-bottom-page'>
                 <Stack spacing={3}>
-                    <Typography variant='h1' sx={{ alignSelf: 'center', ...HEADING_SCRIM }}>
+                    <Typography variant='h1' sx={{ ...HEADING_BAR, fontSize: '2.4rem' }}>
                         {library?.Name ?? globalize.translate('HeaderBrowseBy')}
                     </Typography>
 
