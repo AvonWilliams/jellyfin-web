@@ -34,6 +34,17 @@ import type { BrowseModeDefinition } from 'types/browseMode';
 
 const DECADE_LENGTH = 10;
 
+/**
+ * Semi-opaque scrim drawn behind page headings so they stay legible over busy fanart. The grey
+ * matches the tile scrim, so the headings sit naturally in the page.
+ */
+const HEADING_SCRIM = {
+    display: 'inline-block',
+    padding: '0.25em 0.75em',
+    borderRadius: 2,
+    backgroundColor: 'rgba(52, 52, 52, 0.7)'
+} as const;
+
 /** Maps a picker's filter kind to the server's /Discover/Counts type. */
 const COUNT_TYPE_BY_FILTER: Record<string, string> = {
     Years: 'decade',
@@ -192,7 +203,7 @@ const InlineModeLinks: FC<{
     onSelect: (definition: BrowseModeDefinition) => void;
 }> = ({ definition, children, onSelect }) => (
     <Stack spacing={1}>
-        <Typography variant='h3'>
+        <Typography variant='h3' sx={{ alignSelf: 'flex-start', ...HEADING_SCRIM }}>
             {globalize.translate(definition.label)}
         </Typography>
         <TileGrid>
@@ -726,7 +737,7 @@ const Browse: FC = () => {
 
         return (
             <>
-                <Typography variant='h2' sx={{ textAlign: 'center', textShadow: '0 2px 6px rgba(0, 0, 0, 0.8)' }}>
+                <Typography variant='h2' sx={{ alignSelf: 'center', ...HEADING_SCRIM }}>
                     {globalize.translate('BrowseModeSectionQuickAccess')}
                 </Typography>
                 <PrimaryTileGrid>
@@ -743,7 +754,7 @@ const Browse: FC = () => {
 
                 <Divider sx={{ my: 2, borderBottomWidth: 2 }} />
 
-                <Typography variant='h2' sx={{ textAlign: 'center', textShadow: '0 2px 6px rgba(0, 0, 0, 0.8)' }}>
+                <Typography variant='h2' sx={{ alignSelf: 'center', ...HEADING_SCRIM }}>
                     {globalize.translate('BrowseModeSectionBrowseBy')}
                 </Typography>
                 <Stack spacing={1.5}>
@@ -783,7 +794,7 @@ const Browse: FC = () => {
         >
             <Box className='padded-left padded-right padded-top padded-bottom-page'>
                 <Stack spacing={3}>
-                    <Typography variant='h1' sx={{ textAlign: 'center', textShadow: '0 2px 8px rgba(0, 0, 0, 0.85)' }}>
+                    <Typography variant='h1' sx={{ alignSelf: 'center', ...HEADING_SCRIM }}>
                         {library?.Name ?? globalize.translate('HeaderBrowseBy')}
                     </Typography>
 
