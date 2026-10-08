@@ -19,7 +19,7 @@ import React, { type FC, useCallback, useEffect, useMemo, useRef, useState } fro
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { applyBrowseModeOrder, getBrowseMode, getBrowseModes } from 'apps/modern/features/libraries/constants/browseModes';
-import { getDecadeStyle, getRatingStyle, toTitleCase } from 'apps/modern/features/libraries/constants/pickTiles';
+import { getDecadeStyle, getGenreStyle, getRatingStyle, toTitleCase } from 'apps/modern/features/libraries/constants/pickTiles';
 import TagRibbonsSection from 'apps/modern/features/libraries/components/TagRibbonsSection';
 import { LibraryRoutes } from 'apps/modern/features/libraries/constants/libraryRoutes';
 import { buildPeopleCards } from 'components/cardbuilder/peoplecardbuilder';
@@ -56,14 +56,12 @@ const buildNamedOptions = (
     iconColor: activePicker.iconColor
 }));
 
-/** Builds genre tiles from a plain list of names. */
-const buildGenreOptions = (genres: string[] | null | undefined, activePicker: BrowseModeDefinition) => {
-    const entries = (genres ?? [])
+/** Builds genre tiles from a plain list of names, each drawn with its own genre icon. */
+const buildGenreOptions = (genres: string[] | null | undefined) =>
+    (genres ?? [])
         .slice()
         .sort((a, b) => a.localeCompare(b))
-        .map(genre => ({ label: genre, value: genre }));
-    return buildNamedOptions(activePicker, entries);
-};
+        .map(genre => ({ label: genre, value: genre, ...getGenreStyle(genre) }));
 
 /** Builds studio tiles from studio entities, narrowing by id. */
 const buildStudioOptions = (
@@ -456,7 +454,7 @@ const Browse: FC = () => {
         }
 
         if (activePicker?.picker?.filter === 'Genres') {
-            return buildGenreOptions(filters?.Genres, activePicker);
+            return buildGenreOptions(filters?.Genres);
         }
 
         if (activePicker?.picker?.filter === 'Studios') {
