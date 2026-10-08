@@ -282,46 +282,72 @@ export const byQualityMode: BrowseModeDefinition = {
     children: [BrowseMode.CriticsPicks, BrowseMode.HiddenGems, BrowseMode.AgeRating, BrowseMode.WatchAgain]
 };
 
+// TV libraries have no Critics' Picks (series rarely carry critic ratings), so the Quality
+// secondary drops that child.
+const byQualityTvMode: BrowseModeDefinition = {
+    ...byQualityMode,
+    children: [BrowseMode.HiddenGems, BrowseMode.AgeRating, BrowseMode.WatchAgain]
+};
+
+// The home grid, in display order: six primary quick-access tiles first, then the "Browse by…"
+// meta tiles. Underlying modes (Mood, Story Themes, etc.) are reached through their meta tile,
+// not shown here.
 const movieBrowseModes: BrowseModeDefinition[] = [
     allMode,
-    newReleasesMode,
-    justAddedMode,
     trendingMode,
     topRatedMode,
-    genresMode,
-    decadesMode,
-    criticsPicksMode,
-    hiddenGemsMode,
-    moodMode,
-    storyThemesMode,
-    plotElementsMode,
-    worldsMode,
-    stylesMode,
+    newReleasesMode,
+    justAddedMode,
     randomMode,
-    watchAgainMode,
-    studiosMode,
-    ageRatingMode
+    genresMode,
+    byMoodToneMode,
+    byStoryMode,
+    byWorldStyleMode,
+    byPeopleMode,
+    byTimeMode,
+    byQualityMode,
+    studiosMode
 ];
 
 const tvBrowseModes: BrowseModeDefinition[] = [
     allMode,
-    newReleasesMode,
-    justAddedMode,
     trendingMode,
     topRatedMode,
+    newReleasesMode,
+    justAddedMode,
+    randomMode,
     genresMode,
-    decadesMode,
-    hiddenGemsMode,
+    byMoodToneMode,
+    byStoryMode,
+    byWorldStyleMode,
+    byPeopleMode,
+    byTimeMode,
+    byQualityTvMode,
+    networksMode
+];
+
+/**
+ * Modes still reachable through a meta tile (or a `browseMode` deep link) but no longer shown as
+ * top-level tiles. Shared by movies and TV; Critics' Picks is movie-only because series rarely
+ * carry critic ratings.
+ */
+const underlyingModes: BrowseModeDefinition[] = [
     moodMode,
     storyThemesMode,
     plotElementsMode,
     worldsMode,
     stylesMode,
-    randomMode,
-    watchAgainMode,
-    networksMode,
-    ageRatingMode
+    decadesMode,
+    hiddenGemsMode,
+    ageRatingMode,
+    watchAgainMode
 ];
+
+/** Every mode a collection type can resolve, including the underlying modes reached under meta tiles. */
+const modeRegistryByCollectionType: Partial<Record<CollectionType, BrowseModeDefinition[]>> = {
+    [CollectionType.Movies]: [...movieBrowseModes, ...underlyingModes, criticsPicksMode],
+    [CollectionType.Tvshows]: [...tvBrowseModes, ...underlyingModes]
+};
 
 /**
  * The browse modes offered for each library type. A library type absent from this map keeps
@@ -336,9 +362,13 @@ export const getBrowseModes = (collectionType?: CollectionType | null) => (
     collectionType ? BrowseModesByCollectionType[collectionType] : undefined
 );
 
-export const getBrowseMode = (collectionType: CollectionType | null | undefined, mode: string | null) => (
-    mode ? getBrowseModes(collectionType)?.find(definition => definition.mode === mode) : undefined
-);
+export const getBrowseMode = (collectionType: CollectionType | null | undefined, mode: string | null) => {
+    if (!mode || !collectionType) {
+        return undefined;
+    }
+
+    return modeRegistryByCollectionType[collectionType]?.find(definition => definition.mode === mode);
+};
 
 /**
  * Reorders and filters the default modes to match a server-provided tile layout. Keys absent
