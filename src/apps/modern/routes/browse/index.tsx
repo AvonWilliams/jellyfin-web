@@ -96,7 +96,6 @@ const Tile: FC<TileProps> = ({ label, Icon, iconColor, iconSize, count, onClick 
     <ButtonBase
         onClick={onClick}
         focusRipple
-        className='card'
         sx={{
             flexDirection: 'column',
             gap: 1,
