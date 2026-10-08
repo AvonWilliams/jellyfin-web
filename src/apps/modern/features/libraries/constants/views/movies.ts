@@ -70,7 +70,7 @@ const topRatedTabContent: LibraryTabContent = {
     isBtnFilterEnabled: false,
     isAlphabetPickerEnabled: false,
     isPaginationEnabled: false,
-    noItemsMessage: 'MessageNoTopRatedItems'
+    noItemsMessage: 'MessageNoItemsInCategory'
 };
 
 const trendingTabContent: LibraryTabContent = {
@@ -82,7 +82,7 @@ const trendingTabContent: LibraryTabContent = {
     isBtnFilterEnabled: false,
     isAlphabetPickerEnabled: false,
     isPaginationEnabled: false,
-    noItemsMessage: 'MessageNoTrendingItems'
+    noItemsMessage: 'MessageNoItemsInCategory'
 };
 
 const moviesViews: Record<number, LibraryTabContent> = {

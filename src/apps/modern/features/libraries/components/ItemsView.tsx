@@ -6,6 +6,8 @@ import React, { type FC, SetStateAction, useCallback, useMemo } from 'react';
 
 import { useLibrary } from 'apps/modern/features/libraries/hooks/useLibrary';
 import { getDefaultLibraryViewSettings } from 'apps/modern/features/libraries/utils/settings';
+import BrowseSourceBar from 'apps/modern/features/libraries/components/BrowseSourceBar';
+import { DEFAULT_BROWSE_SOURCE, ENABLED_BROWSE_SOURCES } from 'apps/modern/features/libraries/constants/browseSources';
 import Cards from 'components/cardbuilder/Card/Cards';
 import { CardShape } from 'components/cardbuilder/utils/shape';
 import NoItemsMessage from 'components/common/NoItemsMessage';
@@ -29,9 +31,12 @@ const ItemsView: FC = () => {
         content,
         itemsResult,
         viewSettings,
-        setViewSettings
+        setViewSettings,
+        source,
+        setSource
     } = useLibrary();
     const viewType = content?.viewType ?? LibraryTab.Movies;
+    const isRankedView = viewType === LibraryTab.Trending || viewType === LibraryTab.TopRated;
     const libraryViewSettings = viewSettings ?? getDefaultLibraryViewSettings(viewType);
     const setLibraryViewSettings = useMemo(
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -210,6 +215,16 @@ const ItemsView: FC = () => {
                     value={libraryViewSettings.Alphabet}
                     onChange={handleAlphabetChange}
                 />
+            )}
+
+            {isRankedView && setSource && (
+                <Box sx={{ marginBottom: 2 }}>
+                    <BrowseSourceBar
+                        sources={ENABLED_BROWSE_SOURCES}
+                        activeSource={source ?? DEFAULT_BROWSE_SOURCE}
+                        onChange={setSource}
+                    />
+                </Box>
             )}
 
             {(!itemsResult || itemsResult.isPending) ? (
