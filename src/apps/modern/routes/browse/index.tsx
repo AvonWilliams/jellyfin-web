@@ -198,27 +198,34 @@ const InlineModeLinks: FC<{
             {globalize.translate(definition.label)}
         </Typography>
         <Stack direction='row' spacing={1.5} flexWrap='wrap'>
-            {children.map(child => (
-                <ButtonBase
-                    key={child.mode}
-                    onClick={() => onSelect(child)}
-                    focusRipple
-                    sx={{
-                        px: 1.5,
-                        py: 0.5,
-                        borderRadius: 2,
-                        color: 'primary.main',
-                        '&:hover, &:focus-visible': {
-                            backgroundColor: 'action.hover',
-                            textDecoration: 'underline'
-                        }
-                    }}
-                >
-                    <Typography variant='body1' sx={{ color: 'inherit' }}>
-                        {globalize.translate(child.label)}
-                    </Typography>
-                </ButtonBase>
-            ))}
+            {children.map(child => {
+                const ChildIcon = child.Icon;
+                return (
+                    <ButtonBase
+                        key={child.mode}
+                        onClick={() => onSelect(child)}
+                        focusRipple
+                        sx={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 0.75,
+                            px: 1.5,
+                            py: 0.5,
+                            borderRadius: 2,
+                            color: 'primary.main',
+                            '&:hover, &:focus-visible': {
+                                backgroundColor: 'action.hover',
+                                textDecoration: 'underline'
+                            }
+                        }}
+                    >
+                        {ChildIcon ? <ChildIcon sx={{ fontSize: '1.25rem', color: child.iconColor }} /> : null}
+                        <Typography variant='body1' sx={{ color: 'inherit' }}>
+                            {globalize.translate(child.label)}
+                        </Typography>
+                    </ButtonBase>
+                );
+            })}
         </Stack>
     </Stack>
 );
