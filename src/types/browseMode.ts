@@ -71,6 +71,8 @@ export interface BrowseModeDefinition {
     picker?: BrowsePicker;
     /** For a meta tile: the underlying modes it offers as secondary targets. */
     children?: readonly BrowseMode[];
+    /** For a meta category: render its children as inline text links instead of tiles. */
+    inline?: boolean;
     /** Source used for ranked fetches (e.g. Discover endpoints). Defaults to 'tmdb'. */
     source?: string;
     /** For a people leaf (Actors/Directors/Writers): the person kind to list. */
