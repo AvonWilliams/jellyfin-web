@@ -22,6 +22,8 @@ const SOURCE_LOGOS: Record<string, string> = {
     tmdb: tmdbLogo,
     imdb: imdbLogo,
     netflix: netflixLogo,
+    'netflix-au': netflixLogo,
+    'netflix-ph': netflixLogo,
     letterboxd: letterboxdLogo,
     rottentomatoes: rottentomatoesLogo
 };

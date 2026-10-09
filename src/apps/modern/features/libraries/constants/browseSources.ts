@@ -23,7 +23,9 @@ export interface BrowseSource {
 const TRENDING_SOURCES: readonly BrowseSource[] = [
     { id: 'tmdb', label: 'TMDb Trending', color: '#01B4E4' },
     { id: 'imdb', label: 'IMDb Most Popular', color: '#F5C518' },
-    { id: 'netflix', label: 'Netflix Top 10', color: '#E50914' }
+    { id: 'netflix', label: 'Netflix Global', color: '#E50914' },
+    { id: 'netflix-au', label: 'Netflix Australia', color: '#E50914' },
+    { id: 'netflix-ph', label: 'Netflix Philippines', color: '#E50914' }
 ];
 
 /**
