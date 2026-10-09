@@ -11,7 +11,7 @@ import { useLibrary } from 'apps/modern/features/libraries/hooks/useLibrary';
 import { getDefaultLibraryViewSettings } from 'apps/modern/features/libraries/utils/settings';
 import BrowseSourceBar from 'apps/modern/features/libraries/components/BrowseSourceBar';
 import ComingSoonCard from 'apps/modern/features/libraries/components/ComingSoonCard';
-import { DEFAULT_BROWSE_SOURCE, ENABLED_BROWSE_SOURCES } from 'apps/modern/features/libraries/constants/browseSources';
+import { DEFAULT_BROWSE_SOURCE, getEnabledSources } from 'apps/modern/features/libraries/constants/browseSources';
 import Card from 'components/cardbuilder/Card/Card';
 import Cards from 'components/cardbuilder/Card/Cards';
 import { setCardData } from 'components/cardbuilder/cardBuilder';
@@ -286,7 +286,7 @@ const ItemsView: FC = () => {
                     }}
                 >
                     <BrowseSourceBar
-                        sources={ENABLED_BROWSE_SOURCES}
+                        sources={getEnabledSources(viewType)}
                         activeSource={source ?? DEFAULT_BROWSE_SOURCE}
                         onChange={setSource}
                     />
