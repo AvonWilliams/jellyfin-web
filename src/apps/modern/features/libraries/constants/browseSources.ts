@@ -3,46 +3,43 @@ import { LibraryTab } from 'types/libraryTab';
 /**
  * Ranked-list data sources offered above the Trending / Top Rated results.
  *
- * The source bar renders one chip per enabled source, so adding a source is a data change, not a
- * UI change: add it to <see cref="BROWSE_SOURCES"/> for its chip presentation and to the relevant
- * per-view id list once the plugin exposes the matching /Discover endpoint (which passes the
- * `source` query parameter straight through).
+ * The source bar renders one icon tile per ranked list, so adding a list is a data change, not a
+ * UI change: add it to the relevant per-view array below once the plugin exposes the matching
+ * /Discover endpoint (which passes the `source` query parameter straight through).
  */
 export interface BrowseSource {
     /** Identifier sent as the /Discover `source` query parameter. */
     id: string;
-    /** Chip label. Proper nouns, so not localised. */
+    /** Descriptive tile label, e.g. "IMDb Top 250". Proper nouns, so not localised. */
     label: string;
-    /** Accent colour used for the chip's active state. */
+    /** Accent colour used for the tile's active state. */
     color: string;
 }
 
-/** Known ranked sources and their chip presentation. */
-export const BROWSE_SOURCES: readonly BrowseSource[] = [
-    { id: 'tmdb', label: 'TMDb', color: '#01B4E4' },
-    { id: 'imdb', label: 'IMDb', color: '#F5C518' },
-    { id: 'netflix', label: 'Netflix', color: '#E50914' },
-    { id: 'letterboxd', label: 'Letterboxd', color: '#00E054' },
-    { id: 'rottentomatoes', label: 'Rotten Tomatoes', color: '#FA320A' }
+/**
+ * The lists offered on the Trending tile, in display order. Netflix is trending-only; TMDb and
+ * IMDb serve both.
+ */
+const TRENDING_SOURCES: readonly BrowseSource[] = [
+    { id: 'tmdb', label: 'TMDb Trending', color: '#01B4E4' },
+    { id: 'imdb', label: 'IMDb Most Popular', color: '#F5C518' },
+    { id: 'netflix', label: 'Netflix Top 10', color: '#E50914' }
 ];
 
 /**
- * The sources offered on the Trending tile, in chip order. Netflix is trending-only; TMDb and IMDb
- * serve both.
- */
-export const TRENDING_SOURCE_IDS: readonly string[] = ['tmdb', 'imdb', 'netflix'];
-
-/**
- * The sources offered on the Top Rated tile, in chip order. Letterboxd and Rotten Tomatoes are
+ * The lists offered on the Top Rated tile, in display order. Letterboxd and Rotten Tomatoes are
  * top-rated-only; TMDb and IMDb serve both.
  */
-export const TOPRATED_SOURCE_IDS: readonly string[] = ['tmdb', 'imdb', 'letterboxd', 'rottentomatoes'];
+const TOPRATED_SOURCES: readonly BrowseSource[] = [
+    { id: 'tmdb', label: 'TMDb Top Rated', color: '#01B4E4' },
+    { id: 'imdb', label: 'IMDb Top 250', color: '#F5C518' },
+    { id: 'letterboxd', label: 'Letterboxd Top 250', color: '#00E054' },
+    { id: 'rottentomatoes', label: 'Rotten Tomatoes Top Movies', color: '#FA320A' }
+];
 
 /** Fallback source when no preference has been saved. */
 export const DEFAULT_BROWSE_SOURCE = 'tmdb';
 
-/** The sources rendered as chips for a given ranked view. */
-export const getEnabledSources = (viewType: LibraryTab): readonly BrowseSource[] => {
-    const ids = viewType === LibraryTab.Trending ? TRENDING_SOURCE_IDS : TOPRATED_SOURCE_IDS;
-    return BROWSE_SOURCES.filter(source => ids.includes(source.id));
-};
+/** The sources rendered as tiles for a given ranked view. */
+export const getEnabledSources = (viewType: LibraryTab): readonly BrowseSource[] =>
+    viewType === LibraryTab.Trending ? TRENDING_SOURCES : TOPRATED_SOURCES;
