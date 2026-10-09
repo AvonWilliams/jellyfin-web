@@ -1,4 +1,3 @@
-import type { SvgIconComponent } from '@mui/icons-material';
 import Box from '@mui/material/Box';
 import ButtonBase from '@mui/material/ButtonBase';
 import Stack from '@mui/material/Stack';
@@ -6,9 +5,10 @@ import Typography from '@mui/material/Typography';
 import React, { type FC } from 'react';
 
 import imdbLogo from 'assets/icons/sources/imdb.png';
+import letterboxdLogo from 'assets/icons/sources/letterboxd.png';
 import netflixLogo from 'assets/icons/sources/netflix.png';
+import rottentomatoesLogo from 'assets/icons/sources/rottentomatoes.png';
 import tmdbLogo from 'assets/icons/sources/tmdb.png';
-import { LetterboxdSourceIcon, RottenTomatoesSourceIcon } from 'assets/icons/sources/sourceIcons';
 import type { BrowseSource } from '../constants/browseSources';
 
 interface BrowseSourceBarProps {
@@ -17,28 +17,25 @@ interface BrowseSourceBarProps {
     onChange: (id: string) => void;
 }
 
-/** A source's mark: a full-colour logo image, or a monochrome glyph. */
-type SourceMark = { img: string } | { Icon: SvgIconComponent };
-
-const SOURCE_MARKS: Record<string, SourceMark> = {
-    tmdb: { img: tmdbLogo },
-    imdb: { img: imdbLogo },
-    netflix: { img: netflixLogo },
-    letterboxd: { Icon: LetterboxdSourceIcon },
-    rottentomatoes: { Icon: RottenTomatoesSourceIcon }
+/** The provider logo for each source, keyed by the source id sent to /Discover. */
+const SOURCE_LOGOS: Record<string, string> = {
+    tmdb: tmdbLogo,
+    imdb: imdbLogo,
+    netflix: netflixLogo,
+    letterboxd: letterboxdLogo,
+    rottentomatoes: rottentomatoesLogo
 };
 
 /**
- * Icon-tile bar for choosing the ranked-list data source. Each tile is a mark sized with a small
- * buffer over a dark scrim (matching the coming-soon cards), with a descriptive label underneath.
- * Rendered above the results grid and kept mounted while the grid refreshes, so switching sources
- * never navigates.
+ * Icon-tile bar for choosing the ranked-list data source. Each tile is a provider logo sized with
+ * a small buffer over a white scrim, with a descriptive label underneath. Rendered above the
+ * results grid and kept mounted while the grid refreshes, so switching sources never navigates.
  */
 const BrowseSourceBar: FC<BrowseSourceBarProps> = ({ sources, activeSource, onChange }) => (
     <Stack direction='row' spacing={1.5} sx={{ flexWrap: 'wrap', alignItems: 'flex-start' }}>
         {sources.map(source => {
             const active = source.id === activeSource;
-            const mark = SOURCE_MARKS[source.id];
+            const logo = SOURCE_LOGOS[source.id];
             return (
                 <ButtonBase
                     key={source.id}
@@ -66,10 +63,8 @@ const BrowseSourceBar: FC<BrowseSourceBarProps> = ({ sources, activeSource, onCh
                             border: active ? `2px solid ${source.color}` : '1px solid rgba(0, 0, 0, 0.12)'
                         }}
                     >
-                        {mark && 'img' in mark ? (
-                            <Box component='img' src={mark.img} alt={source.label} sx={{ width: 40, height: 40, objectFit: 'contain' }} />
-                        ) : mark ? (
-                            <mark.Icon sx={{ fontSize: 30, color: '#1a1a1a' }} />
+                        {logo ? (
+                            <Box component='img' src={logo} alt={source.label} sx={{ width: 50, height: 50, objectFit: 'contain' }} />
                         ) : null}
                     </Box>
                     <Typography
