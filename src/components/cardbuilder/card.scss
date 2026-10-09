@@ -910,7 +910,7 @@ button::-moz-focus-inner {
 /* The poster sits on a solid scrim so its transparency reads as a ghost against the card,
    not against the page background. */
 .comingSoonCard .cardImageContainer {
-    background-color: rgba(50, 10, 10, 0.5);
+    background-color: rgba(0, 0, 0, 0.5);
 }
 
 .comingSoonPoster {
