@@ -16,6 +16,10 @@ const makeSourceIcon = (children: ReactNode): SvgIconComponent =>
         </SvgIcon>
     )) as SvgIconComponent;
 
+export const TmdbSourceIcon = makeSourceIcon(
+    <path fill='currentColor' d='M4 3l4 7h12l-4-7H4zM4 11h16v9H4z' />
+);
+
 export const ImdbSourceIcon = makeSourceIcon(
     <path fill='currentColor' d='M2 5H4.6V6.6H4V17.4H4.6V19H2V17.4H2.6V6.6H2ZM5.6 5V19H7.8V5L9.6 14L11.4 5V19H13.6V5ZM14.6 5H16.8C18.7 5 19.2 7 19.2 12C19.2 17 18.7 19 16.8 19H14.6ZM19.8 5H21.8V10.8C22.4 10.8 22.4 14.8 22.4 15.2C22.4 17.4 22.1 19 21.8 19H19.8Z' />
 );
