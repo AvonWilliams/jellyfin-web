@@ -3,7 +3,6 @@ import { CollectionType } from '@jellyfin/sdk/lib/generated-client/models/collec
 import type { PersonKind } from '@jellyfin/sdk/lib/generated-client/models/person-kind';
 import Box from '@mui/material/Box';
 import ButtonBase from '@mui/material/ButtonBase';
-import Divider from '@mui/material/Divider';
 import FormControl from '@mui/material/FormControl';
 import IconButton from '@mui/material/IconButton';
 import MenuItem from '@mui/material/MenuItem';
@@ -56,8 +55,7 @@ const MAIN_HEADING = {
     height: '68px',
     fontSize: '30px',
     fontWeight: 500,
-    textAlign: 'center',
-    marginBottom: '20px'
+    textAlign: 'center'
 } as const;
 
 /** "Browse by category" section heading, subordinate to the main heading. */
@@ -87,6 +85,20 @@ const SUBHEADING = {
     fontWeight: 400,
     textAlign: 'center',
     marginBottom: '6px'
+} as const;
+
+/** Decorative fading glass backdrop behind the primary heading + tiles, softened at the base. */
+const PRIMARY_BACKDROP = {
+    position: 'absolute',
+    inset: '-12px -12px -36px -12px',
+    pointerEvents: 'none',
+    zIndex: 0,
+    backgroundColor: 'rgba(var(--jf-palette-background-paperChannel, 32 32 32) / 0.4)',
+    backdropFilter: 'blur(18px) saturate(110%)',
+    border: 'none',
+    borderRadius: 0,
+    WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 65%, transparent 100%)',
+    maskImage: 'linear-gradient(to bottom, black 0%, black 65%, transparent 100%)'
 } as const;
 
 /** Maps a picker's filter kind to the server's /Discover/Counts type. */
@@ -147,44 +159,44 @@ interface TileProps {
     onClick: () => void;
 }
 
+const DEFAULT_TILE_SX = {
+    flexDirection: 'column',
+    gap: 1,
+    justifyContent: 'center',
+    width: '100%',
+    aspectRatio: '16 / 9',
+    padding: 2,
+    borderRadius: 2,
+    backgroundColor: 'rgba(var(--jf-palette-background-paperChannel, 32 32 32) / 0.7)',
+    backdropFilter: 'blur(10px)',
+    border: '1px solid var(--jf-palette-divider, rgba(255, 255, 255, 0.12))',
+    transition: 'background-color 120ms ease, transform 120ms ease',
+    '&:hover, &:focus-visible': {
+        backgroundColor: 'rgba(var(--jf-palette-background-paperChannel, 32 32 32) / 0.85)',
+        transform: 'scale(1.03)'
+    }
+} as const;
+
+const PRIMARY_TILE_SX = {
+    flexDirection: 'column',
+    gap: '14px',
+    justifyContent: 'center',
+    width: '100%',
+    height: '160px',
+    padding: '16px 12px',
+    ...glassSurface({ opacity: 0.6, blur: 12, radius: '10px' }),
+    transition: 'background-color 150ms ease, border-color 150ms ease',
+    '&:hover, &:focus-visible': {
+        backgroundColor: 'rgba(var(--jf-palette-background-paperChannel, 32 32 32) / 0.7)',
+        borderColor: 'var(--jf-palette-text-secondary, rgba(255, 255, 255, 0.7))'
+    }
+} as const;
+
 const Tile: FC<TileProps> = ({ label, Icon, iconColor, iconSize, labelSize, count, primary, onClick }) => (
     <ButtonBase
         onClick={onClick}
         focusRipple
-        sx={
-            primary
-                ? {
-                    flexDirection: 'column',
-                    gap: '14px',
-                    justifyContent: 'center',
-                    width: '100%',
-                    height: '160px',
-                    padding: '16px 12px',
-                    ...glassSurface({ opacity: 0.6, blur: 12, radius: '10px' }),
-                    transition: 'background-color 150ms ease, border-color 150ms ease',
-                    '&:hover, &:focus-visible': {
-                        backgroundColor: 'rgba(var(--jf-palette-background-paperChannel, 32 32 32) / 0.7)',
-                        borderColor: 'var(--jf-palette-text-secondary, rgba(255, 255, 255, 0.7))'
-                    }
-                }
-                : {
-                    flexDirection: 'column',
-                    gap: 1,
-                    justifyContent: 'center',
-                    width: '100%',
-                    aspectRatio: '16 / 9',
-                    padding: 2,
-                    borderRadius: 2,
-                    backgroundColor: 'rgba(var(--jf-palette-background-paperChannel, 32 32 32) / 0.7)',
-                    backdropFilter: 'blur(10px)',
-                    border: '1px solid var(--jf-palette-divider, rgba(255, 255, 255, 0.12))',
-                    transition: 'background-color 120ms ease, transform 120ms ease',
-                    '&:hover, &:focus-visible': {
-                        backgroundColor: 'rgba(var(--jf-palette-background-paperChannel, 32 32 32) / 0.85)',
-                        transform: 'scale(1.03)'
-                    }
-                }
-        }
+        sx={primary ? PRIMARY_TILE_SX : DEFAULT_TILE_SX}
     >
         {Icon ? <Icon sx={{ fontSize: iconSize ?? (primary ? '3.5rem' : '3.75rem'), color: iconColor }} /> : null}
         <Typography variant='subtitle1' sx={{ textAlign: 'center', lineHeight: 1.2, fontSize: labelSize ?? (primary ? '1.25rem' : '1.5rem'), fontWeight: primary ? 400 : undefined, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
@@ -801,24 +813,40 @@ const Browse: FC = () => {
             );
         }
 
-        return (
-            <>
-                <PrimaryTileGrid>
-                    {primaryModes.map(definition => (
-                        <BrowseModeTile
-                            key={definition.mode}
-                            definition={definition}
-                            onSelect={onModeClick}
-                            primary
-                        />
-                    ))}
-                </PrimaryTileGrid>
+        return null;
+    };
 
-                <Divider sx={{ my: 2, borderBottomWidth: 2 }} />
+    const pageHeading = (
+        <Typography variant='h1' sx={MAIN_HEADING}>
+            {library?.Name ?? globalize.translate('HeaderBrowseBy')}
+        </Typography>
+    );
 
-                <Typography variant='h2' sx={SECTION_HEADING}>
-                    {globalize.translate('BrowseModeSectionBrowseBy')}
-                </Typography>
+    const isHomeView = !activePicker && !activeGroup && !activePersonType;
+
+    const renderHome = () => (
+        <>
+            <Box sx={{ position: 'relative' }}>
+                <Box aria-hidden sx={PRIMARY_BACKDROP} />
+                <Stack sx={{ position: 'relative', zIndex: 1, spacing: '20px' }}>
+                    {pageHeading}
+                    <PrimaryTileGrid>
+                        {primaryModes.map(definition => (
+                            <BrowseModeTile
+                                key={definition.mode}
+                                definition={definition}
+                                onSelect={onModeClick}
+                                primary
+                            />
+                        ))}
+                    </PrimaryTileGrid>
+                </Stack>
+            </Box>
+
+            <Typography variant='h2' sx={SECTION_HEADING}>
+                {globalize.translate('BrowseModeSectionBrowseBy')}
+            </Typography>
+            <Stack spacing='10px'>
                 <Stack spacing={1.5}>
                     {metaModes
                         .filter(definition => definition.inline)
@@ -844,9 +872,9 @@ const Browse: FC = () => {
                             />
                         ))}
                 </TileGrid>
-            </>
-        );
-    };
+            </Stack>
+        </>
+    );
 
     return (
         <Page
@@ -855,13 +883,14 @@ const Browse: FC = () => {
             title={library?.Name ?? undefined}
         >
             <Box className='padded-left padded-right padded-top padded-bottom-page'>
-                <Stack spacing={3}>
-                    <Typography variant='h1' sx={MAIN_HEADING}>
-                        {library?.Name ?? globalize.translate('HeaderBrowseBy')}
-                    </Typography>
-
-                    {renderBrowseContent()}
-                </Stack>
+                {isHomeView ? (
+                    renderHome()
+                ) : (
+                    <Stack spacing={3}>
+                        {pageHeading}
+                        {renderBrowseContent()}
+                    </Stack>
+                )}
             </Box>
         </Page>
     );
