@@ -35,19 +35,58 @@ import type { BrowseModeDefinition } from 'types/browseMode';
 const DECADE_LENGTH = 10;
 
 /**
- * Full-width bar drawn behind page headings so they stay legible over busy fanart. Darker than
- * the tile scrim so the headings read as a distinct header layer above the tiles.
+ * Shared theme-aware glass surface. Uses the paper channel so the tint follows the active theme
+ * (dark/light) instead of a fixed dark rgba, matching the existing `.detailRibbon` convention.
  */
-const HEADING_BAR = {
-    display: 'block',
+const glassSurface = (opts: { opacity: number; blur: number; radius: string }) => ({
+    backgroundColor: `rgba(var(--jf-palette-background-paperChannel, 32 32 32) / ${opts.opacity})`,
+    backdropFilter: `blur(${opts.blur}px)`,
+    border: '1px solid var(--jf-palette-divider, rgba(255, 255, 255, 0.12))',
+    borderRadius: opts.radius,
+    boxShadow: 'none'
+});
+
+/** Primary page heading (library name / "Browse by…"). Most prominent glass heading. */
+const MAIN_HEADING = {
+    ...glassSurface({ opacity: 0.5, blur: 12, radius: '8px' }),
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
     width: '100%',
+    height: '68px',
+    fontSize: '30px',
+    fontWeight: 500,
     textAlign: 'center',
-    padding: '0.5em 0.75em',
-    borderRadius: 2,
-    backgroundColor: 'rgba(var(--jf-palette-background-paperChannel, 32 32 32) / 0.45)',
-    backdropFilter: 'blur(12px)',
-    borderTop: '1px solid var(--jf-palette-divider, rgba(255, 255, 255, 0.12))',
-    borderBottom: '1px solid var(--jf-palette-divider, rgba(255, 255, 255, 0.12))'
+    marginBottom: '20px'
+} as const;
+
+/** "Browse by category" section heading, subordinate to the main heading. */
+const SECTION_HEADING = {
+    ...glassSurface({ opacity: 0.35, blur: 12, radius: '7px' }),
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    height: '44px',
+    fontSize: '19px',
+    fontWeight: 400,
+    textAlign: 'center',
+    marginTop: '28px',
+    marginBottom: '18px'
+} as const;
+
+/** Category subheading (People / Time / Quality). Least prominent heading. */
+const SUBHEADING = {
+    ...glassSurface({ opacity: 0.35, blur: 12, radius: '6px' }),
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    height: '34px',
+    fontSize: '15px',
+    fontWeight: 400,
+    textAlign: 'center',
+    marginBottom: '6px'
 } as const;
 
 /** Maps a picker's filter kind to the server's /Discover/Counts type. */
@@ -210,7 +249,7 @@ const InlineModeLinks: FC<{
     onSelect: (definition: BrowseModeDefinition) => void;
 }> = ({ definition, children, onSelect }) => (
     <Stack spacing={1}>
-        <Typography variant='h3' sx={HEADING_BAR}>
+        <Typography variant='h3' sx={SUBHEADING}>
             {globalize.translate(definition.label)}
         </Typography>
         <TileGrid>
@@ -758,7 +797,7 @@ const Browse: FC = () => {
 
                 <Divider sx={{ my: 2, borderBottomWidth: 2 }} />
 
-                <Typography variant='h2' sx={HEADING_BAR}>
+                <Typography variant='h2' sx={SECTION_HEADING}>
                     {globalize.translate('BrowseModeSectionBrowseBy')}
                 </Typography>
                 <Stack spacing={1.5}>
@@ -798,7 +837,7 @@ const Browse: FC = () => {
         >
             <Box className='padded-left padded-right padded-top padded-bottom-page'>
                 <Stack spacing={3}>
-                    <Typography variant='h1' sx={{ ...HEADING_BAR, fontSize: '2.4rem' }}>
+                    <Typography variant='h1' sx={MAIN_HEADING}>
                         {library?.Name ?? globalize.translate('HeaderBrowseBy')}
                     </Typography>
 
