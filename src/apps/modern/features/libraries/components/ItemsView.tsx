@@ -1,4 +1,5 @@
 import { ImageType } from '@jellyfin/sdk/lib/generated-client/models/image-type';
+import { CollectionType } from '@jellyfin/sdk/lib/generated-client/models/collection-type';
 import { ItemSortBy } from '@jellyfin/sdk/lib/generated-client/models/item-sort-by';
 import Box from '@mui/material/Box';
 import FormControlLabel from '@mui/material/FormControlLabel';
@@ -45,6 +46,11 @@ const ItemsView: FC = () => {
     } = useLibrary();
     const viewType = content?.viewType ?? LibraryTab.Movies;
     const isRankedView = viewType === LibraryTab.Trending || viewType === LibraryTab.TopRated;
+    // Snapshot sources are movie lists; shows are served by TMDb alone.
+    const isShows = collectionType === CollectionType.Tvshows;
+    const browseSources = isShows
+        ? getEnabledSources(viewType).filter(source => source.id === DEFAULT_BROWSE_SOURCE)
+        : getEnabledSources(viewType);
     const libraryViewSettings = viewSettings ?? getDefaultLibraryViewSettings(viewType);
     const setLibraryViewSettings = useMemo(
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -286,7 +292,7 @@ const ItemsView: FC = () => {
                     }}
                 >
                     <BrowseSourceBar
-                        sources={getEnabledSources(viewType)}
+                        sources={browseSources}
                         activeSource={source ?? DEFAULT_BROWSE_SOURCE}
                         onChange={setSource}
                     />
