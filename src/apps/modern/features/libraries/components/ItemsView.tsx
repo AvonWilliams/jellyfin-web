@@ -201,7 +201,7 @@ const ItemsView: FC = () => {
                     />
                     {visibleMissing.map(title => (
                         <ComingSoonCard
-                            key={`${title.Source ?? 'missing'}-${title.Rank ?? title.Title}`}
+                            key={`${title.Source ?? 'missing'}-${title.Rank ?? ''}-${title.Title}`}
                             title={title}
                         />
                     ))}
@@ -223,7 +223,7 @@ const ItemsView: FC = () => {
                     rank: title.Rank ?? Number.MAX_SAFE_INTEGER,
                     node: (
                         <ComingSoonCard
-                            key={`${title.Source ?? 'missing'}-${title.Rank ?? title.Title}`}
+                            key={`${title.Source ?? 'missing'}-${title.Rank ?? ''}-${title.Title}`}
                             title={title}
                         />
                     )
