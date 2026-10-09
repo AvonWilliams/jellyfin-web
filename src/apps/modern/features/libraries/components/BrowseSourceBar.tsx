@@ -5,13 +5,10 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import React, { type FC } from 'react';
 
-import {
-    ImdbSourceIcon,
-    LetterboxdSourceIcon,
-    NetflixSourceIcon,
-    RottenTomatoesSourceIcon,
-    TmdbSourceIcon
-} from 'assets/icons/sources/sourceIcons';
+import imdbLogo from 'assets/icons/sources/imdb.png';
+import netflixLogo from 'assets/icons/sources/netflix.png';
+import tmdbLogo from 'assets/icons/sources/tmdb.png';
+import { LetterboxdSourceIcon, RottenTomatoesSourceIcon } from 'assets/icons/sources/sourceIcons';
 import type { BrowseSource } from '../constants/browseSources';
 
 interface BrowseSourceBarProps {
@@ -20,25 +17,28 @@ interface BrowseSourceBarProps {
     onChange: (id: string) => void;
 }
 
-/** Monochrome brand marks, keyed by the source id sent to /Discover. */
-const SOURCE_ICONS: Record<string, SvgIconComponent> = {
-    tmdb: TmdbSourceIcon,
-    imdb: ImdbSourceIcon,
-    netflix: NetflixSourceIcon,
-    letterboxd: LetterboxdSourceIcon,
-    rottentomatoes: RottenTomatoesSourceIcon
+/** A source's mark: a full-colour logo image, or a monochrome glyph. */
+type SourceMark = { img: string } | { Icon: SvgIconComponent };
+
+const SOURCE_MARKS: Record<string, SourceMark> = {
+    tmdb: { img: tmdbLogo },
+    imdb: { img: imdbLogo },
+    netflix: { img: netflixLogo },
+    letterboxd: { Icon: LetterboxdSourceIcon },
+    rottentomatoes: { Icon: RottenTomatoesSourceIcon }
 };
 
 /**
  * Icon-tile bar for choosing the ranked-list data source. Each tile is a mark sized with a small
- * buffer and a descriptive label underneath. Rendered above the results grid and kept mounted while
- * the grid refreshes, so switching sources never navigates.
+ * buffer over a dark scrim (matching the coming-soon cards), with a descriptive label underneath.
+ * Rendered above the results grid and kept mounted while the grid refreshes, so switching sources
+ * never navigates.
  */
 const BrowseSourceBar: FC<BrowseSourceBarProps> = ({ sources, activeSource, onChange }) => (
     <Stack direction='row' spacing={1.5} sx={{ flexWrap: 'wrap', alignItems: 'flex-start' }}>
         {sources.map(source => {
             const active = source.id === activeSource;
-            const Icon = SOURCE_ICONS[source.id];
+            const mark = SOURCE_MARKS[source.id];
             return (
                 <ButtonBase
                     key={source.id}
@@ -56,17 +56,21 @@ const BrowseSourceBar: FC<BrowseSourceBarProps> = ({ sources, activeSource, onCh
                 >
                     <Box
                         sx={{
-                            width: 52,
-                            height: 52,
+                            width: 56,
+                            height: 56,
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             borderRadius: '12px',
-                            backgroundColor: active ? source.color : 'rgba(128,128,128,0.16)',
-                            color: active ? '#fff' : 'text.primary'
+                            backgroundColor: 'rgba(255, 255, 255, 0.92)',
+                            border: active ? `2px solid ${source.color}` : '1px solid rgba(0, 0, 0, 0.12)'
                         }}
                     >
-                        {Icon ? <Icon sx={{ fontSize: 30 }} /> : null}
+                        {mark && 'img' in mark ? (
+                            <Box component='img' src={mark.img} alt={source.label} sx={{ width: 40, height: 40, objectFit: 'contain' }} />
+                        ) : mark ? (
+                            <mark.Icon sx={{ fontSize: 30, color: '#1a1a1a' }} />
+                        ) : null}
                     </Box>
                     <Typography
                         variant='caption'
