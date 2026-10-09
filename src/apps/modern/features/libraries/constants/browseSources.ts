@@ -42,6 +42,22 @@ const TOPRATED_SOURCES: readonly BrowseSource[] = [
 /** Fallback source when no preference has been saved. */
 export const DEFAULT_BROWSE_SOURCE = 'tmdb';
 
-/** The sources rendered as tiles for a given ranked view. */
-export const getEnabledSources = (viewType: LibraryTab): readonly BrowseSource[] =>
-    viewType === LibraryTab.Trending ? TRENDING_SOURCES : TOPRATED_SOURCES;
+/**
+ * The lists offered on a Shows library. Only TMDb and Netflix carry series data; IMDb,
+ * Letterboxd and Rotten Tomatoes are movie-only, so they are hidden on shows.
+ */
+const TRENDING_SOURCES_SHOWS: readonly BrowseSource[] =
+    TRENDING_SOURCES.filter(source => source.id === 'tmdb' || source.id.startsWith('netflix'));
+
+/** No snapshot source carries a top-rated series list yet, so shows are TMDb-only. */
+const TOPRATED_SOURCES_SHOWS: readonly BrowseSource[] =
+    TOPRATED_SOURCES.filter(source => source.id === 'tmdb');
+
+/** The sources rendered as tiles for a given ranked view and library kind. */
+export const getEnabledSources = (viewType: LibraryTab, isShows = false): readonly BrowseSource[] => {
+    if (viewType === LibraryTab.Trending) {
+        return isShows ? TRENDING_SOURCES_SHOWS : TRENDING_SOURCES;
+    }
+
+    return isShows ? TOPRATED_SOURCES_SHOWS : TOPRATED_SOURCES;
+};

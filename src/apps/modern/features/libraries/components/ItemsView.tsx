@@ -46,11 +46,9 @@ const ItemsView: FC = () => {
     } = useLibrary();
     const viewType = content?.viewType ?? LibraryTab.Movies;
     const isRankedView = viewType === LibraryTab.Trending || viewType === LibraryTab.TopRated;
-    // Snapshot sources are movie lists; shows are served by TMDb alone.
+    // Snapshot movie sources (IMDb, Letterboxd, RT) don't apply to shows; Netflix and TMDb do.
     const isShows = collectionType === CollectionType.Tvshows;
-    const browseSources = isShows
-        ? getEnabledSources(viewType).filter(source => source.id === DEFAULT_BROWSE_SOURCE)
-        : getEnabledSources(viewType);
+    const browseSources = getEnabledSources(viewType, isShows);
     const libraryViewSettings = viewSettings ?? getDefaultLibraryViewSettings(viewType);
     const setLibraryViewSettings = useMemo(
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
