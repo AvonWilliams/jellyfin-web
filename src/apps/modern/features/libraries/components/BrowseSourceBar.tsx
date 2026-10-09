@@ -59,7 +59,7 @@ const BrowseSourceBar: FC<BrowseSourceBarProps> = ({ sources, activeSource, onCh
                             alignItems: 'center',
                             justifyContent: 'center',
                             borderRadius: '12px',
-                            backgroundColor: 'rgba(255, 255, 255, 0.92)',
+                            backgroundColor: 'var(--jf-palette-text-primary)',
                             border: active ? `2px solid ${source.color}` : '1px solid rgba(0, 0, 0, 0.12)'
                         }}
                     >
