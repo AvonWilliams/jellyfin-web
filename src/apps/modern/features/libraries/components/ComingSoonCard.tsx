@@ -30,7 +30,6 @@ const ComingSoonCard: FC<ComingSoonCardProps> = ({ title }) => (
                                 className='comingSoonPoster'
                                 src={title.PosterUrl}
                                 alt={title.Title ?? ''}
-                                loading='lazy'
                                 referrerPolicy='no-referrer'
                             />
                         ) : (
