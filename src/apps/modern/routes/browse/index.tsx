@@ -44,10 +44,10 @@ const HEADING_BAR = {
     textAlign: 'center',
     padding: '0.5em 0.75em',
     borderRadius: 2,
-    backgroundColor: 'rgba(24, 24, 24, 0.45)',
+    backgroundColor: 'rgba(var(--jf-palette-background-paperChannel, 32 32 32) / 0.45)',
     backdropFilter: 'blur(12px)',
-    borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-    borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
+    borderTop: '1px solid var(--jf-palette-divider, rgba(255, 255, 255, 0.12))',
+    borderBottom: '1px solid var(--jf-palette-divider, rgba(255, 255, 255, 0.12))'
 } as const;
 
 /** Maps a picker's filter kind to the server's /Discover/Counts type. */
@@ -119,12 +119,12 @@ const Tile: FC<TileProps> = ({ label, Icon, iconColor, iconSize, labelSize, coun
             aspectRatio: '16 / 9',
             padding: 2,
             borderRadius: 2,
-            backgroundColor: 'rgba(20, 20, 20, 0.7)',
+            backgroundColor: 'rgba(var(--jf-palette-background-paperChannel, 32 32 32) / 0.7)',
             backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
+            border: '1px solid var(--jf-palette-divider, rgba(255, 255, 255, 0.12))',
             transition: 'background-color 120ms ease, transform 120ms ease',
             '&:hover, &:focus-visible': {
-                backgroundColor: 'rgba(20, 20, 20, 0.85)',
+                backgroundColor: 'rgba(var(--jf-palette-background-paperChannel, 32 32 32) / 0.85)',
                 transform: 'scale(1.03)'
             }
         }}
