@@ -143,33 +143,51 @@ interface TileProps {
     iconSize?: string;
     labelSize?: string;
     count?: number;
+    primary?: boolean;
     onClick: () => void;
 }
 
-const Tile: FC<TileProps> = ({ label, Icon, iconColor, iconSize, labelSize, count, onClick }) => (
+const Tile: FC<TileProps> = ({ label, Icon, iconColor, iconSize, labelSize, count, primary, onClick }) => (
     <ButtonBase
         onClick={onClick}
         focusRipple
-        sx={{
-            flexDirection: 'column',
-            gap: 1,
-            justifyContent: 'center',
-            width: '100%',
-            aspectRatio: '16 / 9',
-            padding: 2,
-            borderRadius: 2,
-            backgroundColor: 'rgba(var(--jf-palette-background-paperChannel, 32 32 32) / 0.7)',
-            backdropFilter: 'blur(10px)',
-            border: '1px solid var(--jf-palette-divider, rgba(255, 255, 255, 0.12))',
-            transition: 'background-color 120ms ease, transform 120ms ease',
-            '&:hover, &:focus-visible': {
-                backgroundColor: 'rgba(var(--jf-palette-background-paperChannel, 32 32 32) / 0.85)',
-                transform: 'scale(1.03)'
-            }
-        }}
+        sx={
+            primary
+                ? {
+                    flexDirection: 'column',
+                    gap: '14px',
+                    justifyContent: 'center',
+                    width: '100%',
+                    height: '160px',
+                    padding: '16px 12px',
+                    ...glassSurface({ opacity: 0.6, blur: 12, radius: '10px' }),
+                    transition: 'background-color 150ms ease, border-color 150ms ease',
+                    '&:hover, &:focus-visible': {
+                        backgroundColor: 'rgba(var(--jf-palette-background-paperChannel, 32 32 32) / 0.7)',
+                        borderColor: 'var(--jf-palette-text-secondary, rgba(255, 255, 255, 0.7))'
+                    }
+                }
+                : {
+                    flexDirection: 'column',
+                    gap: 1,
+                    justifyContent: 'center',
+                    width: '100%',
+                    aspectRatio: '16 / 9',
+                    padding: 2,
+                    borderRadius: 2,
+                    backgroundColor: 'rgba(var(--jf-palette-background-paperChannel, 32 32 32) / 0.7)',
+                    backdropFilter: 'blur(10px)',
+                    border: '1px solid var(--jf-palette-divider, rgba(255, 255, 255, 0.12))',
+                    transition: 'background-color 120ms ease, transform 120ms ease',
+                    '&:hover, &:focus-visible': {
+                        backgroundColor: 'rgba(var(--jf-palette-background-paperChannel, 32 32 32) / 0.85)',
+                        transform: 'scale(1.03)'
+                    }
+                }
+        }
     >
-        {Icon ? <Icon sx={{ fontSize: iconSize ?? '3.75rem', color: iconColor }} /> : null}
-        <Typography variant='subtitle1' sx={{ textAlign: 'center', lineHeight: 1.2, fontSize: labelSize ?? '1.5rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
+        {Icon ? <Icon sx={{ fontSize: iconSize ?? (primary ? '3.5rem' : '3.75rem'), color: iconColor }} /> : null}
+        <Typography variant='subtitle1' sx={{ textAlign: 'center', lineHeight: 1.2, fontSize: labelSize ?? (primary ? '1.25rem' : '1.5rem'), fontWeight: primary ? 400 : undefined, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
             {label}
         </Typography>
         {count !== undefined ? (
@@ -185,7 +203,8 @@ const BrowseModeTile: FC<{
     onSelect: (definition: BrowseModeDefinition) => void;
     iconSize?: string;
     labelSize?: string;
-}> = ({ definition, onSelect, iconSize, labelSize }) => {
+    primary?: boolean;
+}> = ({ definition, onSelect, iconSize, labelSize, primary }) => {
     const onClick = useCallback(() => onSelect(definition), [onSelect, definition]);
 
     return (
@@ -195,6 +214,7 @@ const BrowseModeTile: FC<{
             iconColor={definition.iconColor}
             iconSize={iconSize}
             labelSize={labelSize}
+            primary={primary}
             onClick={onClick}
         />
     );
@@ -235,7 +255,7 @@ const PrimaryTileGrid: FC<{ children: React.ReactNode }> = ({ children }) => (
                 sm: 'repeat(3, minmax(0, 1fr))',
                 lg: 'repeat(6, minmax(0, 1fr))'
             },
-            gap: 2
+            gap: '14px'
         }}
     >
         {children}
@@ -789,8 +809,7 @@ const Browse: FC = () => {
                             key={definition.mode}
                             definition={definition}
                             onSelect={onModeClick}
-                            iconSize='7rem'
-                            labelSize='2.1rem'
+                            primary
                         />
                     ))}
                 </PrimaryTileGrid>
