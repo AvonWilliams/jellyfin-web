@@ -32,7 +32,7 @@ const SOURCE_LOGOS: Record<string, string> = {
  * source is tinted with its accent colour and filled with a subtle scrim; the rest stay neutral.
  */
 const BrowseSourceBar: FC<BrowseSourceBarProps> = ({ sources, activeSource, onChange }) => (
-    <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+    <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1.25 }}>
         {sources.map(source => {
             const active = source.id === activeSource;
             const logo = SOURCE_LOGOS[source.id];
@@ -44,8 +44,8 @@ const BrowseSourceBar: FC<BrowseSourceBarProps> = ({ sources, activeSource, onCh
                     sx={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: 0.75,
-                        padding: '4px 14px',
+                        gap: 1,
+                        padding: '6px 18px',
                         borderRadius: '999px',
                         border: `1px solid ${active ? source.color : 'var(--jf-palette-divider, rgba(255, 255, 255, 0.12))'}`,
                         backgroundColor: active ? 'rgba(var(--jf-palette-background-paperChannel, 32 32 32) / 0.5)' : 'transparent',
@@ -57,12 +57,12 @@ const BrowseSourceBar: FC<BrowseSourceBarProps> = ({ sources, activeSource, onCh
                             component='img'
                             src={logo}
                             alt=''
-                            sx={{ width: 16, height: 16, objectFit: 'contain', filter: active ? 'none' : 'grayscale(1) opacity(0.75)' }}
+                            sx={{ width: 18, height: 18, objectFit: 'contain', filter: active ? 'none' : 'grayscale(1) opacity(0.75)' }}
                         />
                     ) : null}
                     <Typography
                         variant='caption'
-                        sx={{ color: active ? source.color : 'text.secondary', fontWeight: active ? 600 : 400, lineHeight: 1 }}
+                        sx={{ color: active ? source.color : 'text.secondary', fontWeight: active ? 600 : 400, lineHeight: 1, fontSize: '0.875rem' }}
                     >
                         {source.label}
                     </Typography>

@@ -421,6 +421,15 @@ export const getBrowseMode = (collectionType: CollectionType | null | undefined,
 };
 
 /**
+ * Old group keys (Story, World & Style) are now flattened into their leaf modes. Expand them so a
+ * saved tile layout that still references the group keys shows the leaves instead of hiding them.
+ */
+const GROUP_EXPANSION: Partial<Record<BrowseMode, readonly BrowseMode[]>> = {
+    [BrowseMode.ByStory]: [BrowseMode.StoryThemes, BrowseMode.PlotElements],
+    [BrowseMode.ByWorldStyle]: [BrowseMode.Worlds, BrowseMode.Styles]
+};
+
+/**
  * Reorders and filters the default modes to match a server-provided tile layout. Keys absent
  * from the layout are hidden; keys the layout mentions that this collection type does not offer
  * are skipped. An empty layout leaves the built-in order and visibility untouched.
@@ -434,7 +443,8 @@ export const applyBrowseModeOrder = (
     }
 
     const byKey = new Map(modes.map(definition => [definition.mode, definition]));
-    return order
-        .map(key => byKey.get(key as BrowseMode))
+    const keys = order.flatMap(key => GROUP_EXPANSION[key as BrowseMode] ?? [key as BrowseMode]);
+    return keys
+        .map(key => byKey.get(key))
         .filter((definition): definition is BrowseModeDefinition => Boolean(definition));
 };
