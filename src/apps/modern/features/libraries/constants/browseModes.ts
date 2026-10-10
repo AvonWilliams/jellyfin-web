@@ -241,36 +241,29 @@ const hiddenGemsMode: BrowseModeDefinition = {
 // `children`; the underlying modes' enum values and definitions stay intact for deep links and
 // settings keys. Icon colours reuse the existing palette.
 
-export const byMoodToneMode: BrowseModeDefinition = {
-    mode: BrowseMode.ByMoodTone,
-    label: 'BrowseModeMoodTone',
-    Icon: Mood,
-    iconColor: '#EC407A',
+export const byCategoriesMode: BrowseModeDefinition = {
+    mode: BrowseMode.ByCategories,
+    label: 'Categories',
+    Icon: Category,
+    iconColor: '#B0BEC5',
     tier: 'meta',
-    children: [BrowseMode.Mood]
+    children: [BrowseMode.Genres, BrowseMode.Studios, BrowseMode.Decades, BrowseMode.Year],
+    inline: true
 };
 
-export const byStoryMode: BrowseModeDefinition = {
-    mode: BrowseMode.ByStory,
-    label: 'BrowseModeStory',
-    Icon: AutoStories,
-    iconColor: '#FF7043',
+export const byVibeMode: BrowseModeDefinition = {
+    mode: BrowseMode.ByVibe,
+    label: 'Mood & Themes',
+    Icon: Palette,
+    iconColor: '#7E57C2',
     tier: 'meta',
-    children: [BrowseMode.StoryThemes, BrowseMode.PlotElements]
-};
-
-export const byWorldStyleMode: BrowseModeDefinition = {
-    mode: BrowseMode.ByWorldStyle,
-    label: 'BrowseModeWorldStyle',
-    Icon: Public,
-    iconColor: '#5C6BC0',
-    tier: 'meta',
-    children: [BrowseMode.Worlds, BrowseMode.Styles]
+    children: [BrowseMode.Mood, BrowseMode.StoryThemes, BrowseMode.PlotElements, BrowseMode.Worlds, BrowseMode.Styles],
+    inline: true
 };
 
 export const byPeopleMode: BrowseModeDefinition = {
     mode: BrowseMode.ByPeople,
-    label: 'BrowseModePeople',
+    label: 'People',
     Icon: Group,
     iconColor: '#9CCC65',
     tier: 'meta',
@@ -307,19 +300,9 @@ const writersMode: BrowseModeDefinition = {
     personType: PersonKind.Writer
 };
 
-export const byTimeMode: BrowseModeDefinition = {
-    mode: BrowseMode.ByTime,
-    label: 'BrowseModeTime',
-    Icon: CalendarMonth,
-    iconColor: '#7E9CD8',
-    tier: 'meta',
-    children: [BrowseMode.Decades, BrowseMode.Year],
-    inline: true
-};
-
 export const byQualityMode: BrowseModeDefinition = {
     mode: BrowseMode.ByQuality,
-    label: 'BrowseModeQuality',
+    label: 'Discover',
     Icon: Reviews,
     iconColor: '#E0533D',
     tier: 'meta',
@@ -344,15 +327,8 @@ const movieBrowseModes: BrowseModeDefinition[] = [
     newReleasesMode,
     justAddedMode,
     randomMode,
-    // "Browse by…" meta modes: direct pickers first (grouped in one grid), then labeled groups.
-    genresMode,
-    studiosMode,
-    byMoodToneMode,
-    storyThemesMode,
-    plotElementsMode,
-    worldsMode,
-    stylesMode,
-    byTimeMode,
+    byCategoriesMode,
+    byVibeMode,
     byPeopleMode,
     byQualityMode
 ];
@@ -364,27 +340,44 @@ const tvBrowseModes: BrowseModeDefinition[] = [
     newReleasesMode,
     justAddedMode,
     randomMode,
-    genresMode,
-    networksMode,
-    byMoodToneMode,
-    storyThemesMode,
-    plotElementsMode,
-    worldsMode,
-    stylesMode,
-    byTimeMode,
+    byCategoriesMode,
+    byVibeMode,
     byPeopleMode,
     byQualityTvMode
 ];
 
 /**
  * Modes still reachable through a meta tile (or a `browseMode` deep link) but no longer shown as
- * top-level tiles. Shared by movies and TV; Critics' Picks is movie-only because series rarely
- * carry critic ratings.
+ * top-level tiles. Split per collection type so Studios resolves to Networks for TV libraries.
  */
-const underlyingModes: BrowseModeDefinition[] = [
-    moodMode,
+const movieUnderlyingModes: BrowseModeDefinition[] = [
+    genresMode,
+    studiosMode,
     decadesMode,
     yearMode,
+    moodMode,
+    storyThemesMode,
+    plotElementsMode,
+    worldsMode,
+    stylesMode,
+    hiddenGemsMode,
+    ageRatingMode,
+    watchAgainMode,
+    actorsMode,
+    directorsMode,
+    writersMode
+];
+
+const tvUnderlyingModes: BrowseModeDefinition[] = [
+    genresMode,
+    networksMode,
+    decadesMode,
+    yearMode,
+    moodMode,
+    storyThemesMode,
+    plotElementsMode,
+    worldsMode,
+    stylesMode,
     hiddenGemsMode,
     ageRatingMode,
     watchAgainMode,
@@ -395,8 +388,8 @@ const underlyingModes: BrowseModeDefinition[] = [
 
 /** Every mode a collection type can resolve, including the underlying modes reached under meta tiles. */
 const modeRegistryByCollectionType: Partial<Record<CollectionType, BrowseModeDefinition[]>> = {
-    [CollectionType.Movies]: [...movieBrowseModes, ...underlyingModes, criticsPicksMode],
-    [CollectionType.Tvshows]: [...tvBrowseModes, ...underlyingModes]
+    [CollectionType.Movies]: [...movieBrowseModes, ...movieUnderlyingModes, criticsPicksMode],
+    [CollectionType.Tvshows]: [...tvBrowseModes, ...tvUnderlyingModes]
 };
 
 /**
@@ -421,15 +414,6 @@ export const getBrowseMode = (collectionType: CollectionType | null | undefined,
 };
 
 /**
- * Old group keys (Story, World & Style) are now flattened into their leaf modes. Expand them so a
- * saved tile layout that still references the group keys shows the leaves instead of hiding them.
- */
-const GROUP_EXPANSION: Partial<Record<BrowseMode, readonly BrowseMode[]>> = {
-    [BrowseMode.ByStory]: [BrowseMode.StoryThemes, BrowseMode.PlotElements],
-    [BrowseMode.ByWorldStyle]: [BrowseMode.Worlds, BrowseMode.Styles]
-};
-
-/**
  * Reorders and filters the default modes to match a server-provided tile layout. Keys absent
  * from the layout are hidden; keys the layout mentions that this collection type does not offer
  * are skipped. An empty layout leaves the built-in order and visibility untouched.
@@ -443,8 +427,7 @@ export const applyBrowseModeOrder = (
     }
 
     const byKey = new Map(modes.map(definition => [definition.mode, definition]));
-    const keys = order.flatMap(key => GROUP_EXPANSION[key as BrowseMode] ?? [key as BrowseMode]);
-    return keys
-        .map(key => byKey.get(key))
+    return order
+        .map(key => byKey.get(key as BrowseMode))
         .filter((definition): definition is BrowseModeDefinition => Boolean(definition));
 };
