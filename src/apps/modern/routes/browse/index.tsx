@@ -227,7 +227,7 @@ const TileGrid: FC<{ children: React.ReactNode }> = ({ children }) => (
     <Box
         sx={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
             gap: 2
         }}
     >
