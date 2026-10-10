@@ -25,11 +25,15 @@ import {
     DramaGenreIcon,
     FamilyGenreIcon,
     FantasyGenreIcon,
+    HistoryGenreIcon,
     HorrorGenreIcon,
+    MusicGenreIcon,
     MysteryGenreIcon,
     RomanceGenreIcon,
     SciFiGenreIcon,
-    ThrillerGenreIcon
+    ThrillerGenreIcon,
+    WarGenreIcon,
+    WesternGenreIcon
 } from 'assets/icons/genres/genreIcons';
 
 export interface PickTileStyle {
@@ -69,38 +73,36 @@ export const getDecadeStyle = (startYear: number): PickTileStyle => {
 };
 
 /**
- * The single purple used for every genre icon. The icon shape is the differentiator, so all
- * genres share this colour for a coherent grid.
- */
-const GENRE_ICON_COLOR = '#C07CD6';
-
-/**
- * How each genre is drawn, keyed by its normalised name (lowercase, non-letters stripped).
- * Aliases cover the common alternate spellings, so "Science Fiction" and "SciFi" both resolve to
- * the sci-fi icon and "Romantic" to the romance one.
+ * Each genre gets its own icon and accent colour so the grid reads as distinct destinations
+ * rather than a set of identical tiles. The icon shape is the primary differentiator; the colour
+ * reinforces it.
  */
 const GENRE_STYLES: Readonly<Record<string, PickTileStyle>> = {
-    action: { Icon: ActionGenreIcon, iconColor: GENRE_ICON_COLOR },
-    adventure: { Icon: AdventureGenreIcon, iconColor: GENRE_ICON_COLOR },
-    animation: { Icon: AnimationGenreIcon, iconColor: GENRE_ICON_COLOR },
-    animated: { Icon: AnimationGenreIcon, iconColor: GENRE_ICON_COLOR },
-    comedy: { Icon: ComedyGenreIcon, iconColor: GENRE_ICON_COLOR },
-    crime: { Icon: CrimeGenreIcon, iconColor: GENRE_ICON_COLOR },
-    documentary: { Icon: DocumentaryGenreIcon, iconColor: GENRE_ICON_COLOR },
-    drama: { Icon: DramaGenreIcon, iconColor: GENRE_ICON_COLOR },
-    family: { Icon: FamilyGenreIcon, iconColor: GENRE_ICON_COLOR },
-    fantasy: { Icon: FantasyGenreIcon, iconColor: GENRE_ICON_COLOR },
-    horror: { Icon: HorrorGenreIcon, iconColor: GENRE_ICON_COLOR },
-    mystery: { Icon: MysteryGenreIcon, iconColor: GENRE_ICON_COLOR },
-    romance: { Icon: RomanceGenreIcon, iconColor: GENRE_ICON_COLOR },
-    romantic: { Icon: RomanceGenreIcon, iconColor: GENRE_ICON_COLOR },
-    scifi: { Icon: SciFiGenreIcon, iconColor: GENRE_ICON_COLOR },
-    sciencefiction: { Icon: SciFiGenreIcon, iconColor: GENRE_ICON_COLOR },
-    thriller: { Icon: ThrillerGenreIcon, iconColor: GENRE_ICON_COLOR }
+    action: { Icon: ActionGenreIcon, iconColor: '#E53935' },
+    adventure: { Icon: AdventureGenreIcon, iconColor: '#FB8C00' },
+    animation: { Icon: AnimationGenreIcon, iconColor: '#FDD835' },
+    animated: { Icon: AnimationGenreIcon, iconColor: '#FDD835' },
+    comedy: { Icon: ComedyGenreIcon, iconColor: '#F06292' },
+    crime: { Icon: CrimeGenreIcon, iconColor: '#546E7A' },
+    documentary: { Icon: DocumentaryGenreIcon, iconColor: '#1E88E5' },
+    drama: { Icon: DramaGenreIcon, iconColor: '#8E24AA' },
+    family: { Icon: FamilyGenreIcon, iconColor: '#43A047' },
+    fantasy: { Icon: FantasyGenreIcon, iconColor: '#5E35B1' },
+    history: { Icon: HistoryGenreIcon, iconColor: '#8D6E63' },
+    horror: { Icon: HorrorGenreIcon, iconColor: '#C62828' },
+    music: { Icon: MusicGenreIcon, iconColor: '#26A69A' },
+    mystery: { Icon: MysteryGenreIcon, iconColor: '#3949AB' },
+    romance: { Icon: RomanceGenreIcon, iconColor: '#EC407A' },
+    romantic: { Icon: RomanceGenreIcon, iconColor: '#EC407A' },
+    scifi: { Icon: SciFiGenreIcon, iconColor: '#00ACC1' },
+    sciencefiction: { Icon: SciFiGenreIcon, iconColor: '#00ACC1' },
+    thriller: { Icon: ThrillerGenreIcon, iconColor: '#EF6C00' },
+    war: { Icon: WarGenreIcon, iconColor: '#6D4C41' },
+    western: { Icon: WesternGenreIcon, iconColor: '#C9A227' }
 };
 
 /** Genres without a dedicated icon share the generic category glyph. */
-const FALLBACK_GENRE_STYLE: PickTileStyle = { Icon: Category, iconColor: GENRE_ICON_COLOR };
+const FALLBACK_GENRE_STYLE: PickTileStyle = { Icon: Category, iconColor: '#9AA5B1' };
 
 /** Normalises a genre name for lookup: case-insensitive with punctuation and spacing ignored. */
 const normalizeGenre = (genre: string): string =>

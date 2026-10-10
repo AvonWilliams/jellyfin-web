@@ -1,6 +1,5 @@
 import Box from '@mui/material/Box';
 import ButtonBase from '@mui/material/ButtonBase';
-import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import React, { type FC } from 'react';
 
@@ -29,12 +28,11 @@ const SOURCE_LOGOS: Record<string, string> = {
 };
 
 /**
- * Icon-tile bar for choosing the ranked-list data source. Each tile is a provider logo sized with
- * a small buffer over a white scrim, with a descriptive label underneath. Rendered above the
- * results grid and kept mounted while the grid refreshes, so switching sources never navigates.
+ * Compact source selector: a row of pill chips, each a small provider mark plus label. The active
+ * source is tinted with its accent colour and filled with a subtle scrim; the rest stay neutral.
  */
 const BrowseSourceBar: FC<BrowseSourceBarProps> = ({ sources, activeSource, onChange }) => (
-    <Stack direction='row' spacing={1.5} sx={{ flexWrap: 'wrap', alignItems: 'flex-start' }}>
+    <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
         {sources.map(source => {
             const active = source.id === activeSource;
             const logo = SOURCE_LOGOS[source.id];
@@ -45,41 +43,33 @@ const BrowseSourceBar: FC<BrowseSourceBarProps> = ({ sources, activeSource, onCh
                     aria-pressed={active}
                     sx={{
                         display: 'flex',
-                        flexDirection: 'column',
                         alignItems: 'center',
-                        gap: 0.5,
-                        width: 84,
-                        padding: 0.5,
-                        borderRadius: 1
+                        gap: 0.75,
+                        padding: '4px 14px',
+                        borderRadius: '999px',
+                        border: `1px solid ${active ? source.color : 'var(--jf-palette-divider, rgba(255, 255, 255, 0.12))'}`,
+                        backgroundColor: active ? 'rgba(var(--jf-palette-background-paperChannel, 32 32 32) / 0.5)' : 'transparent',
+                        transition: 'background-color 120ms ease, border-color 120ms ease'
                     }}
                 >
-                    <Box
-                        sx={{
-                            width: 56,
-                            height: 56,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            borderRadius: '12px',
-                            backgroundColor: 'var(--jf-palette-text-primary)',
-                            border: active ? `2px solid ${source.color}` : '1px solid rgba(0, 0, 0, 0.12)'
-                        }}
-                    >
-                        {logo ? (
-                            <Box component='img' src={logo} alt={source.label} sx={{ width: 50, height: 50, objectFit: 'contain' }} />
-                        ) : null}
-                    </Box>
+                    {logo ? (
+                        <Box
+                            component='img'
+                            src={logo}
+                            alt=''
+                            sx={{ width: 16, height: 16, objectFit: 'contain', filter: active ? 'none' : 'grayscale(1) opacity(0.75)' }}
+                        />
+                    ) : null}
                     <Typography
                         variant='caption'
-                        align='center'
-                        sx={{ lineHeight: 1.2, color: active ? source.color : 'text.secondary' }}
+                        sx={{ color: active ? source.color : 'text.secondary', fontWeight: active ? 600 : 400, lineHeight: 1 }}
                     >
                         {source.label}
                     </Typography>
                 </ButtonBase>
             );
         })}
-    </Stack>
+    </Box>
 );
 
 export default BrowseSourceBar;

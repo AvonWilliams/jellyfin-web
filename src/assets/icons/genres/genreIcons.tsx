@@ -79,3 +79,19 @@ export const SciFiGenreIcon = makeGenreIcon(
 export const ThrillerGenreIcon = makeGenreIcon(
     <path fill='currentColor' d='M1 21h22L12 2zm12-3h-2v-2h2zm0-4h-2v-4h2z' />
 );
+
+export const HistoryGenreIcon = makeGenreIcon(
+    <path fill='currentColor' d='M6 2v6h.01L6 8.01 10 12l-4 4 .01.01H6V22h12v-5.99h-.01L18 16l-4-4 4-3.99-.01-.01H18V2z' />
+);
+
+export const MusicGenreIcon = makeGenreIcon(
+    <path fill='currentColor' d='M12 3v10.55A4 4 0 1 0 14 17V7h4V3z' />
+);
+
+export const WarGenreIcon = makeGenreIcon(
+    <path fill='currentColor' d='M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5z' />
+);
+
+export const WesternGenreIcon = makeGenreIcon(
+    <path fill='currentColor' d='M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z' />
+);

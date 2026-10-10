@@ -1,0 +1,45 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Yellow Bird — Final Candidate</title>
+<style>
+  :root { --bg: #1a1a2e; --fg: #FFFFFFE6; }
+  body { background: var(--bg); display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; flex-direction: column; gap: 32px; }
+  .row { display: flex; gap: 16px; align-items: center; }
+  .sz { font: 10px monospace; color: #888; text-align: center; }
+  .chip { border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+  .chip.dark { background: #12121f; }
+</style>
+
+<!-- 48 px — the squint-test size -->
+<div class="row">
+  <div class="chip dark" style="width:48px;height:48px;">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="40" height="40" color="#FFFFFFE6">
+      <circle cx="12" cy="12" r="9.5" fill="#FFCC00" opacity="0.15"/>
+      <path d="M 5,5 C 6.5,7.5 8,9.5 9,10.5 C 7,11 5,11.5 3.5,12 C 3,12.5 3.5,13 5,12.5 C 7,12 8,13 7.5,15 C 7,17 6,18.5 5,19.5 C 5.5,19 7,17.5 8,16 C 9,14.5 10.5,13.5 13,13 C 16,12 18.5,11.5 20.5,11.5 L 21.5,12 C 20.5,12.5 19,13 16.5,13 C 14,13 11.5,12.5 10,11.5 C 8.5,10 7,7.5 5,5 Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
+  <div class="sz">48 px</div>
+</div>
+
+<!-- 24 px — icon size -->
+<div class="row">
+  <div class="chip dark" style="width:24px;height:24px;">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" color="#FFFFFFE6">
+      <circle cx="12" cy="12" r="9.5" fill="#FFCC00" opacity="0.15"/>
+      <path d="M 5,5 C 6.5,7.5 8,9.5 9,10.5 C 7,11 5,11.5 3.5,12 C 3,12.5 3.5,13 5,12.5 C 7,12 8,13 7.5,15 C 7,17 6,18.5 5,19.5 C 5.5,19 7,17.5 8,16 C 9,14.5 10.5,13.5 13,13 C 16,12 18.5,11.5 20.5,11.5 L 21.5,12 C 20.5,12.5 19,13 16.5,13 C 14,13 11.5,12.5 10,11.5 C 8.5,10 7,7.5 5,5 Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
+  <div class="sz">24 px</div>
+</div>
+
+<!-- scaled up for inspection -->
+<div class="row">
+  <div class="chip dark" style="width:120px;height:120px;">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100" height="100" color="#FFFFFFE6">
+      <circle cx="12" cy="12" r="9.5" fill="#FFCC00" opacity="0.15"/>
+      <path d="M 5,5 C 6.5,7.5 8,9.5 9,10.5 C 7,11 5,11.5 3.5,12 C 3,12.5 3.5,13 5,12.5 C 7,12 8,13 7.5,15 C 7,17 6,18.5 5,19.5 C 5.5,19 7,17.5 8,16 C 9,14.5 10.5,13.5 13,13 C 16,12 18.5,11.5 20.5,11.5 L 21.5,12 C 20.5,12.5 19,13 16.5,13 C 14,13 11.5,12.5 10,11.5 C 8.5,10 7,7.5 5,5 Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
+  <div class="sz">120 px</div>
+</div>
+</html>
