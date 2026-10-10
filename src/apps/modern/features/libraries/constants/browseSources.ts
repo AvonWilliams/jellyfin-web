@@ -43,6 +43,16 @@ const TOPRATED_SOURCES: readonly BrowseSource[] = [
 export const DEFAULT_BROWSE_SOURCE = 'tmdb';
 
 /**
+ * The ranking windows offered on the Trending tile, sent as the /Discover `window` query
+ * parameter. Top Rated lists have no time dimension, so they never send it.
+ */
+export const BROWSE_WINDOWS = ['day', 'week', 'month'] as const;
+export type BrowseWindow = typeof BROWSE_WINDOWS[number];
+
+/** Fallback window when no preference has been saved. */
+export const DEFAULT_BROWSE_WINDOW: BrowseWindow = 'week';
+
+/**
  * The lists offered on a Shows library. Only TMDb and Netflix carry series data; IMDb,
  * Letterboxd and Rotten Tomatoes are movie-only, so they are hidden on shows.
  */
