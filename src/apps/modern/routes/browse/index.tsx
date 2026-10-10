@@ -45,60 +45,30 @@ const glassSurface = (opts: { opacity: number; blur: number; radius: string }) =
     boxShadow: 'none'
 });
 
-/** Primary page heading (library name / "Browse by…"). Most prominent glass heading. */
-const MAIN_HEADING = {
-    ...glassSurface({ opacity: 0.5, blur: 12, radius: '8px' }),
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-    height: '68px',
-    fontSize: '30px',
-    fontWeight: 500,
-    textAlign: 'center'
+/** Quiet left-aligned group label (People / Time / Quality) — plain text, no pill. */
+const GROUP_LABEL_SX = {
+    fontSize: '0.875rem',
+    fontWeight: 600,
+    color: 'text.secondary',
+    letterSpacing: '0.03em',
+    paddingLeft: '4px'
 } as const;
 
-/** "Browse by category" section heading, subordinate to the main heading. */
-const SECTION_HEADING = {
-    ...glassSurface({ opacity: 0.35, blur: 12, radius: '7px' }),
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
+/** Blurred library backdrop image, inset behind the whole browse content. */
+const BACKDROP_IMG_SX = {
     width: '100%',
-    height: '44px',
-    fontSize: '19px',
-    fontWeight: 400,
-    textAlign: 'center',
-    marginTop: '28px',
-    marginBottom: '18px'
+    height: '100%',
+    objectFit: 'cover',
+    objectPosition: 'center',
+    filter: 'blur(28px) saturate(120%)',
+    transform: 'scale(1.15)'
 } as const;
 
-/** Category subheading (People / Time / Quality). Least prominent heading. */
-const SUBHEADING = {
-    ...glassSurface({ opacity: 0.35, blur: 12, radius: '6px' }),
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-    height: '34px',
-    fontSize: '15px',
-    fontWeight: 400,
-    textAlign: 'center',
-    marginBottom: '6px'
-} as const;
-
-/** Decorative fading glass backdrop behind the primary heading + tiles, softened at the base. */
-const PRIMARY_BACKDROP = {
+/** Fading scrim over the backdrop: heavy over the primary tiles, transparent by the meta area. */
+const BACKDROP_SCRIM_SX = {
     position: 'absolute',
-    inset: '-12px -12px -36px -12px',
-    pointerEvents: 'none',
-    zIndex: 0,
-    backgroundColor: 'rgba(var(--jf-palette-background-paperChannel, 32 32 32) / 0.4)',
-    backdropFilter: 'blur(18px) saturate(110%)',
-    border: 'none',
-    borderRadius: 0,
-    WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 65%, transparent 100%)',
-    maskImage: 'linear-gradient(to bottom, black 0%, black 65%, transparent 100%)'
+    inset: 0,
+    background: 'linear-gradient(to bottom, rgba(var(--jf-palette-background-paperChannel, 32 32 32) / 0.8), rgba(var(--jf-palette-background-paperChannel, 32 32 32) / 0.48) 45%, transparent 80%)'
 } as const;
 
 /** Maps a picker's filter kind to the server's /Discover/Counts type. */
@@ -281,7 +251,7 @@ const InlineModeLinks: FC<{
     onSelect: (definition: BrowseModeDefinition) => void;
 }> = ({ definition, children, onSelect }) => (
     <Stack spacing={1}>
-        <Typography variant='h3' sx={SUBHEADING}>
+        <Typography variant='h3' sx={GROUP_LABEL_SX}>
             {globalize.translate(definition.label)}
         </Typography>
         <TileGrid>
@@ -371,6 +341,23 @@ const Browse: FC = () => {
     const collectionType = searchParams.get('collectionType') as CollectionType | null;
 
     const { data: library } = useItem(libraryId ?? undefined);
+
+    // The library's own artwork (backdrop fanart, falling back to the primary image) used as the
+    // blurred backdrop behind the whole browse surface.
+    const libraryBackdropUrl = useMemo(() => {
+        if (!__legacyApiClient__ || !library?.Id) {
+            return undefined;
+        }
+        const backdropTag = library.BackdropImageTags?.[0];
+        if (backdropTag) {
+            return __legacyApiClient__.getScaledImageUrl(library.Id, { type: 'Backdrop', tag: backdropTag, maxWidth: 2560 });
+        }
+        const primaryTag = library.ImageTags?.Primary;
+        if (primaryTag) {
+            return __legacyApiClient__.getScaledImageUrl(library.Id, { type: 'Primary', tag: primaryTag, maxWidth: 2560 });
+        }
+        return undefined;
+    }, [__legacyApiClient__, library]);
 
     // The administrator's tile order and visibility, fetched from the plugin. An empty or
     // missing layout falls back to the built-in order with every mode shown.
@@ -816,64 +803,61 @@ const Browse: FC = () => {
         return null;
     };
 
-    const pageHeading = (
-        <Typography variant='h1' sx={MAIN_HEADING}>
-            {library?.Name ?? globalize.translate('HeaderBrowseBy')}
-        </Typography>
-    );
-
     const isHomeView = !activePicker && !activeGroup && !activePersonType;
 
     const renderHome = () => (
-        <>
-            <Box sx={{ position: 'relative' }}>
-                <Box aria-hidden sx={PRIMARY_BACKDROP} />
-                <Stack sx={{ position: 'relative', zIndex: 1, spacing: '20px' }}>
-                    {pageHeading}
-                    <PrimaryTileGrid>
-                        {primaryModes.map(definition => (
-                            <BrowseModeTile
-                                key={definition.mode}
-                                definition={definition}
-                                onSelect={onModeClick}
-                                primary
-                            />
-                        ))}
-                    </PrimaryTileGrid>
-                </Stack>
+        <Box sx={{ position: 'relative' }}>
+            <Box
+                aria-hidden
+                sx={{ position: 'absolute', inset: 0, zIndex: 0, overflow: 'hidden', pointerEvents: 'none' }}
+            >
+                {libraryBackdropUrl ? (
+                    <Box component='img' src={libraryBackdropUrl} alt='' sx={BACKDROP_IMG_SX} />
+                ) : null}
+                <Box aria-hidden sx={BACKDROP_SCRIM_SX} />
             </Box>
 
-            <Typography variant='h2' sx={SECTION_HEADING}>
-                {globalize.translate('BrowseModeSectionBrowseBy')}
-            </Typography>
-            <Stack spacing='10px'>
-                <Stack spacing={1.5}>
-                    {metaModes
-                        .filter(definition => definition.inline)
-                        .map(definition => (
-                            <InlineModeLinks
-                                key={definition.mode}
-                                definition={definition}
-                                children={(definition.children ?? [])
-                                    .map(child => getBrowseMode(collectionType, child))
-                                    .filter((child): child is BrowseModeDefinition => Boolean(child))}
-                                onSelect={openLeaf}
-                            />
-                        ))}
+            <Stack sx={{ position: 'relative', zIndex: 1 }} spacing='28px'>
+                <PrimaryTileGrid>
+                    {primaryModes.map(definition => (
+                        <BrowseModeTile
+                            key={definition.mode}
+                            definition={definition}
+                            onSelect={onModeClick}
+                            primary
+                        />
+                    ))}
+                </PrimaryTileGrid>
+
+                <Stack spacing='10px'>
+                    <Stack spacing={2}>
+                        {metaModes
+                            .filter(definition => definition.inline)
+                            .map(definition => (
+                                <InlineModeLinks
+                                    key={definition.mode}
+                                    definition={definition}
+                                    children={(definition.children ?? [])
+                                        .map(child => getBrowseMode(collectionType, child))
+                                        .filter((child): child is BrowseModeDefinition => Boolean(child))}
+                                    onSelect={openLeaf}
+                                />
+                            ))}
+                    </Stack>
+                    <TileGrid>
+                        {metaModes
+                            .filter(definition => !definition.inline)
+                            .map(definition => (
+                                <BrowseModeTile
+                                    key={definition.mode}
+                                    definition={definition}
+                                    onSelect={onModeClick}
+                                />
+                            ))}
+                    </TileGrid>
                 </Stack>
-                <TileGrid>
-                    {metaModes
-                        .filter(definition => !definition.inline)
-                        .map(definition => (
-                            <BrowseModeTile
-                                key={definition.mode}
-                                definition={definition}
-                                onSelect={onModeClick}
-                            />
-                        ))}
-                </TileGrid>
             </Stack>
-        </>
+        </Box>
     );
 
     return (
@@ -887,7 +871,6 @@ const Browse: FC = () => {
                     renderHome()
                 ) : (
                     <Stack spacing={3}>
-                        {pageHeading}
                         {renderBrowseContent()}
                     </Stack>
                 )}
