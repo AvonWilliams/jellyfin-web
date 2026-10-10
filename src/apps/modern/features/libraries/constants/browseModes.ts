@@ -344,17 +344,17 @@ const movieBrowseModes: BrowseModeDefinition[] = [
     newReleasesMode,
     justAddedMode,
     randomMode,
-    // "Browse by…" meta modes, most-used first: direct pickers, then labeled groups, then niche tags.
+    // "Browse by…" meta modes: direct pickers first (grouped in one grid), then labeled groups.
     genresMode,
     studiosMode,
     byMoodToneMode,
-    byTimeMode,
-    byPeopleMode,
-    byQualityMode,
     storyThemesMode,
     plotElementsMode,
     worldsMode,
-    stylesMode
+    stylesMode,
+    byTimeMode,
+    byPeopleMode,
+    byQualityMode
 ];
 
 const tvBrowseModes: BrowseModeDefinition[] = [
@@ -367,13 +367,13 @@ const tvBrowseModes: BrowseModeDefinition[] = [
     genresMode,
     networksMode,
     byMoodToneMode,
-    byTimeMode,
-    byPeopleMode,
-    byQualityTvMode,
     storyThemesMode,
     plotElementsMode,
     worldsMode,
-    stylesMode
+    stylesMode,
+    byTimeMode,
+    byPeopleMode,
+    byQualityTvMode
 ];
 
 /**
