@@ -12,7 +12,7 @@ import { LibraryTab } from 'types/libraryTab';
 import { LibraryTabContent } from 'types/libraryTabContent';
 
 import { getBrowseMode } from '../constants/browseModes';
-import { DEFAULT_BROWSE_SOURCE } from '../constants/browseSources';
+import { BROWSE_WINDOWS, DEFAULT_BROWSE_SOURCE, DEFAULT_BROWSE_WINDOW, type BrowseWindow } from '../constants/browseSources';
 import { LibraryRoutes } from '../constants/libraryRoutes';
 import { isLibraryPath } from '../utils/path';
 import { getDefaultLibraryViewSettings, getSettingsKey } from '../utils/settings';
@@ -28,6 +28,8 @@ interface LibraryState {
     setViewSettings?: React.Dispatch<React.SetStateAction<LibraryViewSettings>>;
     source?: string;
     setSource?: React.Dispatch<React.SetStateAction<string>>;
+    window?: BrowseWindow;
+    setWindow?: React.Dispatch<React.SetStateAction<BrowseWindow>>;
 }
 
 const DEFAULT_LIBRARY_STATE: LibraryState = {
@@ -91,17 +93,27 @@ export const LibraryProvider: FC<PropsWithChildren<unknown>> = ({ children }) =>
     // The ranked data source (TMDb, IMDb, …) for Trending / Top Rated, persisted per view so
     // switching sources only re-fetches the ranked list without touching the library view settings.
     const isRankedView = viewType === LibraryTab.Trending || viewType === LibraryTab.TopRated;
+    const isTrendingView = viewType === LibraryTab.Trending;
     const [source, setSource] = useLocalStorage<string>(
         `browseSource-${settingsViewType}`,
         DEFAULT_BROWSE_SOURCE
     );
+
+    // The ranking window (day / week / month) for Trending, persisted per view. Top Rated lists
+    // have no time dimension, so the value is only read and sent for Trending.
+    const [browseWindow, setBrowseWindow] = useLocalStorage<BrowseWindow>(
+        `browseWindow-${settingsViewType}`,
+        DEFAULT_BROWSE_WINDOW
+    );
+    const window = BROWSE_WINDOWS.includes(browseWindow) ? browseWindow : DEFAULT_BROWSE_WINDOW;
 
     const itemsResult = useGetItemsViewByType(
         viewType,
         libraryId,
         content?.itemType,
         viewSettings,
-        isRankedView ? source : undefined
+        isRankedView ? source : undefined,
+        isTrendingView ? window : undefined
     );
 
     const state = useMemo(() => ({
@@ -114,8 +126,10 @@ export const LibraryProvider: FC<PropsWithChildren<unknown>> = ({ children }) =>
         setViewSettings,
         itemsResult,
         source: isRankedView ? source : undefined,
-        setSource: isRankedView ? setSource : undefined
-    }), [collectionType, isLibPath, id, content, viewSettings, setViewSettings, itemsResult, isRankedView, source, setSource]);
+        setSource: isRankedView ? setSource : undefined,
+        window: isTrendingView ? window : undefined,
+        setWindow: isTrendingView ? setBrowseWindow : undefined
+    }), [collectionType, isLibPath, id, content, viewSettings, setViewSettings, itemsResult, isRankedView, source, setSource, isTrendingView, window, setBrowseWindow]);
 
     return (
         <LibraryContext.Provider value={state}>
