@@ -227,7 +227,7 @@ const TileGrid: FC<{ children: React.ReactNode }> = ({ children }) => (
     <Box
         sx={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
             gap: 2
         }}
     >
@@ -886,7 +886,7 @@ const Browse: FC = () => {
         >
             <Box
                 aria-hidden
-                sx={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: -1, overflow: 'hidden', pointerEvents: 'none' }}
+                sx={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 0, overflow: 'hidden', pointerEvents: 'none' }}
             >
                 {libraryBackdropUrl ? (
                     <>
@@ -897,7 +897,7 @@ const Browse: FC = () => {
                 <Box aria-hidden sx={BACKDROP_SCRIM_SX} />
             </Box>
 
-            <Box className='padded-left padded-right padded-top padded-bottom-page'>
+            <Box className='padded-left padded-right padded-top padded-bottom-page' sx={{ position: 'relative', zIndex: 1 }}>
                 {isHomeView ? (
                     renderHome()
                 ) : (
