@@ -813,6 +813,52 @@ const Browse: FC = () => {
 
     const isHomeView = !activePicker && !activeGroup && !activePersonType;
 
+    // Render meta modes in array order: consecutive non-inline pickers are batched into shared
+    // grids, inline groups render as labeled sections. Preserves usefulness order while each row
+    // fills horizontally.
+    const renderMetaSections = () => {
+        const sections: React.ReactNode[] = [];
+        let pickerBatch: BrowseModeDefinition[] = [];
+
+        const flushPickers = () => {
+            if (pickerBatch.length) {
+                sections.push(
+                    <TileGrid key={`pickers-${sections.length}`}>
+                        {pickerBatch.map(definition => (
+                            <BrowseModeTile
+                                key={definition.mode}
+                                definition={definition}
+                                onSelect={onModeClick}
+                            />
+                        ))}
+                    </TileGrid>
+                );
+                pickerBatch = [];
+            }
+        };
+
+        for (const definition of metaModes) {
+            if (definition.inline) {
+                flushPickers();
+                sections.push(
+                    <InlineModeLinks
+                        key={definition.mode}
+                        definition={definition}
+                        children={(definition.children ?? [])
+                            .map(child => getBrowseMode(collectionType, child))
+                            .filter((child): child is BrowseModeDefinition => Boolean(child))}
+                        onSelect={openLeaf}
+                    />
+                );
+            } else {
+                pickerBatch.push(definition);
+            }
+        }
+        flushPickers();
+
+        return sections;
+    };
+
     const renderHome = () => (
         <Stack spacing='28px'>
             <PrimaryTileGrid>
@@ -826,32 +872,8 @@ const Browse: FC = () => {
                 ))}
             </PrimaryTileGrid>
 
-            <Stack spacing='10px'>
-                <Stack spacing={2}>
-                    {metaModes
-                        .filter(definition => definition.inline)
-                        .map(definition => (
-                            <InlineModeLinks
-                                key={definition.mode}
-                                definition={definition}
-                                children={(definition.children ?? [])
-                                    .map(child => getBrowseMode(collectionType, child))
-                                    .filter((child): child is BrowseModeDefinition => Boolean(child))}
-                                onSelect={openLeaf}
-                            />
-                        ))}
-                </Stack>
-                <TileGrid>
-                    {metaModes
-                        .filter(definition => !definition.inline)
-                        .map(definition => (
-                            <BrowseModeTile
-                                key={definition.mode}
-                                definition={definition}
-                                onSelect={onModeClick}
-                            />
-                        ))}
-                </TileGrid>
+            <Stack spacing='40px'>
+                {renderMetaSections()}
             </Stack>
         </Stack>
     );
@@ -862,29 +884,27 @@ const Browse: FC = () => {
             className='mainAnimatedPage libraryPage'
             title={library?.Name ?? undefined}
         >
-            <Box sx={{ position: 'relative' }}>
-                <Box
-                    aria-hidden
-                    sx={{ position: 'absolute', inset: 0, zIndex: 0, overflow: 'hidden', pointerEvents: 'none' }}
-                >
-                    {libraryBackdropUrl ? (
-                        <>
-                            <Box component='img' src={libraryBackdropUrl} alt='' sx={BACKDROP_BASE_SX} />
-                            <Box component='img' src={libraryBackdropUrl} alt='' sx={BACKDROP_FROST_SX} />
-                        </>
-                    ) : null}
-                    <Box aria-hidden sx={BACKDROP_SCRIM_SX} />
-                </Box>
+            <Box
+                aria-hidden
+                sx={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: -1, overflow: 'hidden', pointerEvents: 'none' }}
+            >
+                {libraryBackdropUrl ? (
+                    <>
+                        <Box component='img' src={libraryBackdropUrl} alt='' sx={BACKDROP_BASE_SX} />
+                        <Box component='img' src={libraryBackdropUrl} alt='' sx={BACKDROP_FROST_SX} />
+                    </>
+                ) : null}
+                <Box aria-hidden sx={BACKDROP_SCRIM_SX} />
+            </Box>
 
-                <Box className='padded-left padded-right padded-top padded-bottom-page' sx={{ position: 'relative', zIndex: 1 }}>
-                    {isHomeView ? (
-                        renderHome()
-                    ) : (
-                        <Stack spacing={3}>
-                            {renderBrowseContent()}
-                        </Stack>
-                    )}
-                </Box>
+            <Box className='padded-left padded-right padded-top padded-bottom-page'>
+                {isHomeView ? (
+                    renderHome()
+                ) : (
+                    <Stack spacing={3}>
+                        {renderBrowseContent()}
+                    </Stack>
+                )}
             </Box>
         </Page>
     );
