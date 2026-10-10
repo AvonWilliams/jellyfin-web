@@ -131,10 +131,10 @@ interface TileProps {
 
 const DEFAULT_TILE_SX = {
     flexDirection: 'column',
-    gap: 1,
+    gap: '10px',
     justifyContent: 'center',
     width: '100%',
-    aspectRatio: '16 / 9',
+    aspectRatio: '1 / 1',
     padding: 2,
     borderRadius: 2,
     backgroundColor: 'rgba(var(--jf-palette-background-paperChannel, 32 32 32) / 0.7)',
@@ -153,7 +153,7 @@ const PRIMARY_TILE_SX = {
     justifyContent: 'center',
     width: '100%',
     height: '160px',
-    padding: '16px 12px',
+    padding: '20px 16px',
     ...glassSurface({ opacity: 0.6, blur: 12, radius: '10px' }),
     transition: 'background-color 150ms ease, border-color 150ms ease',
     '&:hover, &:focus-visible': {
@@ -169,7 +169,7 @@ const Tile: FC<TileProps> = ({ label, Icon, iconColor, iconSize, labelSize, coun
         sx={primary ? PRIMARY_TILE_SX : DEFAULT_TILE_SX}
     >
         {Icon ? <Icon sx={{ fontSize: iconSize ?? (primary ? '3.5rem' : '3.75rem'), color: iconColor }} /> : null}
-        <Typography variant='subtitle1' sx={{ textAlign: 'center', lineHeight: 1.2, fontSize: labelSize ?? (primary ? '1.25rem' : '1.5rem'), fontWeight: primary ? 400 : undefined, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
+        <Typography variant='subtitle1' sx={{ textAlign: 'center', lineHeight: 1.2, fontSize: labelSize ?? (primary ? '1.25rem' : '0.95rem'), fontWeight: primary ? 400 : undefined, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
             {label}
         </Typography>
         {count !== undefined ? (
@@ -219,7 +219,7 @@ const TileGrid: FC<{ children: React.ReactNode }> = ({ children }) => (
     <Box
         sx={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
             gap: 2
         }}
     >
@@ -237,7 +237,7 @@ const PrimaryTileGrid: FC<{ children: React.ReactNode }> = ({ children }) => (
                 sm: 'repeat(3, minmax(0, 1fr))',
                 lg: 'repeat(6, minmax(0, 1fr))'
             },
-            gap: '14px'
+            gap: '20px'
         }}
     >
         {children}
