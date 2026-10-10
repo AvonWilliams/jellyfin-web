@@ -54,21 +54,29 @@ const GROUP_LABEL_SX = {
     paddingLeft: '4px'
 } as const;
 
-/** Blurred library backdrop image, inset behind the whole browse content. */
-const BACKDROP_IMG_SX = {
+/** Sharp library backdrop base image, filling the whole browse surface. */
+const BACKDROP_BASE_SX = {
+    position: 'absolute',
+    inset: 0,
     width: '100%',
     height: '100%',
     objectFit: 'cover',
-    objectPosition: 'center',
-    filter: 'blur(28px) saturate(120%)',
-    transform: 'scale(1.15)'
+    objectPosition: 'center'
 } as const;
 
-/** Fading scrim over the backdrop: heavy over the primary tiles, transparent by the meta area. */
+/** Frosted (blurred) overlay of the same image, fading out toward the bottom. */
+const BACKDROP_FROST_SX = {
+    ...BACKDROP_BASE_SX,
+    filter: 'blur(20px) saturate(130%)',
+    WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 40%, transparent 95%)',
+    maskImage: 'linear-gradient(to bottom, black 0%, black 40%, transparent 95%)'
+} as const;
+
+/** Light scrim that fades toward the bottom, keeping the frosted zone dim enough for tiles. */
 const BACKDROP_SCRIM_SX = {
     position: 'absolute',
     inset: 0,
-    background: 'linear-gradient(to bottom, rgba(var(--jf-palette-background-paperChannel, 32 32 32) / 0.8), rgba(var(--jf-palette-background-paperChannel, 32 32 32) / 0.48) 45%, transparent 80%)'
+    background: 'linear-gradient(to bottom, rgba(var(--jf-palette-background-paperChannel, 32 32 32) / 0.55), rgba(var(--jf-palette-background-paperChannel, 32 32 32) / 0.2) 45%, transparent 80%)'
 } as const;
 
 /** Maps a picker's filter kind to the server's /Discover/Counts type. */
@@ -806,58 +814,46 @@ const Browse: FC = () => {
     const isHomeView = !activePicker && !activeGroup && !activePersonType;
 
     const renderHome = () => (
-        <Box sx={{ position: 'relative' }}>
-            <Box
-                aria-hidden
-                sx={{ position: 'absolute', inset: 0, zIndex: 0, overflow: 'hidden', pointerEvents: 'none' }}
-            >
-                {libraryBackdropUrl ? (
-                    <Box component='img' src={libraryBackdropUrl} alt='' sx={BACKDROP_IMG_SX} />
-                ) : null}
-                <Box aria-hidden sx={BACKDROP_SCRIM_SX} />
-            </Box>
+        <Stack spacing='28px'>
+            <PrimaryTileGrid>
+                {primaryModes.map(definition => (
+                    <BrowseModeTile
+                        key={definition.mode}
+                        definition={definition}
+                        onSelect={onModeClick}
+                        primary
+                    />
+                ))}
+            </PrimaryTileGrid>
 
-            <Stack sx={{ position: 'relative', zIndex: 1 }} spacing='28px'>
-                <PrimaryTileGrid>
-                    {primaryModes.map(definition => (
-                        <BrowseModeTile
-                            key={definition.mode}
-                            definition={definition}
-                            onSelect={onModeClick}
-                            primary
-                        />
-                    ))}
-                </PrimaryTileGrid>
-
-                <Stack spacing='10px'>
-                    <Stack spacing={2}>
-                        {metaModes
-                            .filter(definition => definition.inline)
-                            .map(definition => (
-                                <InlineModeLinks
-                                    key={definition.mode}
-                                    definition={definition}
-                                    children={(definition.children ?? [])
-                                        .map(child => getBrowseMode(collectionType, child))
-                                        .filter((child): child is BrowseModeDefinition => Boolean(child))}
-                                    onSelect={openLeaf}
-                                />
-                            ))}
-                    </Stack>
-                    <TileGrid>
-                        {metaModes
-                            .filter(definition => !definition.inline)
-                            .map(definition => (
-                                <BrowseModeTile
-                                    key={definition.mode}
-                                    definition={definition}
-                                    onSelect={onModeClick}
-                                />
-                            ))}
-                    </TileGrid>
+            <Stack spacing='10px'>
+                <Stack spacing={2}>
+                    {metaModes
+                        .filter(definition => definition.inline)
+                        .map(definition => (
+                            <InlineModeLinks
+                                key={definition.mode}
+                                definition={definition}
+                                children={(definition.children ?? [])
+                                    .map(child => getBrowseMode(collectionType, child))
+                                    .filter((child): child is BrowseModeDefinition => Boolean(child))}
+                                onSelect={openLeaf}
+                            />
+                        ))}
                 </Stack>
+                <TileGrid>
+                    {metaModes
+                        .filter(definition => !definition.inline)
+                        .map(definition => (
+                            <BrowseModeTile
+                                key={definition.mode}
+                                definition={definition}
+                                onSelect={onModeClick}
+                            />
+                        ))}
+                </TileGrid>
             </Stack>
-        </Box>
+        </Stack>
     );
 
     return (
@@ -866,14 +862,29 @@ const Browse: FC = () => {
             className='mainAnimatedPage libraryPage'
             title={library?.Name ?? undefined}
         >
-            <Box className='padded-left padded-right padded-top padded-bottom-page'>
-                {isHomeView ? (
-                    renderHome()
-                ) : (
-                    <Stack spacing={3}>
-                        {renderBrowseContent()}
-                    </Stack>
-                )}
+            <Box sx={{ position: 'relative' }}>
+                <Box
+                    aria-hidden
+                    sx={{ position: 'absolute', inset: 0, zIndex: 0, overflow: 'hidden', pointerEvents: 'none' }}
+                >
+                    {libraryBackdropUrl ? (
+                        <>
+                            <Box component='img' src={libraryBackdropUrl} alt='' sx={BACKDROP_BASE_SX} />
+                            <Box component='img' src={libraryBackdropUrl} alt='' sx={BACKDROP_FROST_SX} />
+                        </>
+                    ) : null}
+                    <Box aria-hidden sx={BACKDROP_SCRIM_SX} />
+                </Box>
+
+                <Box className='padded-left padded-right padded-top padded-bottom-page' sx={{ position: 'relative', zIndex: 1 }}>
+                    {isHomeView ? (
+                        renderHome()
+                    ) : (
+                        <Stack spacing={3}>
+                            {renderBrowseContent()}
+                        </Stack>
+                    )}
+                </Box>
             </Box>
         </Page>
     );
