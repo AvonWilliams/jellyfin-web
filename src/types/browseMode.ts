@@ -38,7 +38,9 @@ export enum BrowseMode {
     ByWorldStyle = 'byworldstyle',
     ByPeople = 'bypeople',
     ByTime = 'bytime',
-    ByQuality = 'byquality'
+    ByQuality = 'byquality',
+    ByCategories = 'bycategories',
+    ByVibe = 'byvibe'
 }
 
 /**
