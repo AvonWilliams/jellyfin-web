@@ -299,6 +299,7 @@ const ItemsView: FC = () => {
 
             {isRankedView && setSource && (
                 <Box
+                    className='padded-left padded-right'
                     sx={{
                         marginBottom: 2,
                         display: 'flex',
