@@ -305,11 +305,11 @@ const ItemsView: FC = () => {
                         alignItems: 'center',
                         justifyContent: 'space-between',
                         flexWrap: 'wrap',
-                        gap: 1
+                        gap: 1.5
                     }}
                 >
-                    {isTrendingView && setBrowseWindow && (
-                        <Box sx={{ flexBasis: '100%' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1.5 }}>
+                        {isTrendingView && setBrowseWindow && (
                             <ToggleButtonGroup
                                 size='small'
                                 exclusive
@@ -326,13 +326,13 @@ const ItemsView: FC = () => {
                                     </ToggleButton>
                                 ))}
                             </ToggleButtonGroup>
-                        </Box>
-                    )}
-                    <BrowseSourceBar
-                        sources={browseSources}
-                        activeSource={source ?? DEFAULT_BROWSE_SOURCE}
-                        onChange={setSource}
-                    />
+                        )}
+                        <BrowseSourceBar
+                            sources={browseSources}
+                            activeSource={source ?? DEFAULT_BROWSE_SOURCE}
+                            onChange={setSource}
+                        />
+                    </Box>
                     <FormControlLabel
                         control={
                             <Switch
