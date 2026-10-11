@@ -479,6 +479,7 @@ export const useGetItemsViewByType = (
     source?: string
 ) => {
     const currentApi = useApi();
+    const isRankedView = viewType === LibraryTab.Trending || viewType === LibraryTab.TopRated;
     return useQuery({
         queryKey: [
             'User',
@@ -504,6 +505,7 @@ export const useGetItemsViewByType = (
                 { signal }
             ),
         refetchOnWindowFocus: false,
+        staleTime: isRankedView ? 0 : undefined,
         enabled: !!currentApi.api && !!currentApi.user?.Id
             && viewType
             && [
