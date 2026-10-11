@@ -4,17 +4,15 @@ import { ItemSortBy } from '@jellyfin/sdk/lib/generated-client/models/item-sort-
 import Box from '@mui/material/Box';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Switch from '@mui/material/Switch';
-import ToggleButton from '@mui/material/ToggleButton';
-import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import classNames from 'classnames';
-import React, { type FC, SetStateAction, useCallback, useMemo } from 'react';
+import { type FC, SetStateAction, useCallback, useMemo } from 'react';
 import { useLocalStorage } from 'usehooks-ts';
 
 import { useLibrary } from 'apps/modern/features/libraries/hooks/useLibrary';
 import { getDefaultLibraryViewSettings } from 'apps/modern/features/libraries/utils/settings';
 import BrowseSourceBar from 'apps/modern/features/libraries/components/BrowseSourceBar';
 import ComingSoonCard from 'apps/modern/features/libraries/components/ComingSoonCard';
-import { BROWSE_WINDOWS, DEFAULT_BROWSE_SOURCE, DEFAULT_BROWSE_WINDOW, getEnabledSources, type BrowseWindow } from 'apps/modern/features/libraries/constants/browseSources';
+import { DEFAULT_BROWSE_SOURCE, getEnabledSources } from 'apps/modern/features/libraries/constants/browseSources';
 import Card from 'components/cardbuilder/Card/Card';
 import Cards from 'components/cardbuilder/Card/Cards';
 import { setCardData } from 'components/cardbuilder/cardBuilder';
@@ -35,13 +33,6 @@ import type { ListOptions } from 'types/listOptions';
 import AlphabetPicker from './AlphabetPicker';
 import useMediaQuery from '@mui/material/useMediaQuery';
 
-/** Translation keys for the ranking window options; the labels are generic calendar words. */
-const WINDOW_LABELS: Record<BrowseWindow, string> = {
-    day: 'Day',
-    week: 'Week',
-    month: 'Month'
-};
-
 const ItemsView: FC = () => {
     const {
         id: parentId,
@@ -51,13 +42,10 @@ const ItemsView: FC = () => {
         viewSettings,
         setViewSettings,
         source,
-        setSource,
-        window: browseWindow,
-        setWindow: setBrowseWindow
+        setSource
     } = useLibrary();
     const viewType = content?.viewType ?? LibraryTab.Movies;
     const isRankedView = viewType === LibraryTab.Trending || viewType === LibraryTab.TopRated;
-    const isTrendingView = viewType === LibraryTab.Trending;
     // Snapshot movie sources (IMDb, Letterboxd, RT) don't apply to shows; Netflix and TMDb do.
     const isShows = collectionType === CollectionType.Tvshows;
     const browseSources = getEnabledSources(viewType, isShows);
@@ -272,13 +260,6 @@ const ItemsView: FC = () => {
         }));
     }, [setLibraryViewSettings]);
 
-    const handleWindowChange = useCallback((
-        _event: React.MouseEvent<HTMLElement>,
-        value: string | null | undefined
-    ) => {
-        if (value) setBrowseWindow?.(value as BrowseWindow);
-    }, [setBrowseWindow]);
-
     const hasSortName = !libraryViewSettings.SortBy.includes(ItemSortBy.Random);
 
     const itemsContainerClass = classNames(
@@ -310,24 +291,6 @@ const ItemsView: FC = () => {
                     }}
                 >
                     <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1.5 }}>
-                        {isTrendingView && setBrowseWindow && (
-                            <ToggleButtonGroup
-                                size='small'
-                                exclusive
-                                color='primary'
-                                value={browseWindow ?? DEFAULT_BROWSE_WINDOW}
-                                onChange={handleWindowChange}
-                            >
-                                {BROWSE_WINDOWS.map(timeWindow => (
-                                    <ToggleButton
-                                        key={timeWindow}
-                                        value={timeWindow}
-                                    >
-                                        {globalize.translate(WINDOW_LABELS[timeWindow])}
-                                    </ToggleButton>
-                                ))}
-                            </ToggleButtonGroup>
-                        )}
                         <BrowseSourceBar
                             sources={browseSources}
                             activeSource={source ?? DEFAULT_BROWSE_SOURCE}
