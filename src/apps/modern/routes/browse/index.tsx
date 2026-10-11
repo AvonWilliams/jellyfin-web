@@ -24,7 +24,7 @@ import { buildPeopleCards } from 'components/cardbuilder/peoplecardbuilder';
 import { CardShape } from 'components/cardbuilder/utils/shape';
 import Loading from 'components/loading/LoadingComponent';
 import Page from 'components/Page';
-import { useGetPersons, useGetQueryFiltersLegacy, useGetStudios } from 'hooks/useFetchItems';
+import { useGetPersonItemCounts, useGetPersons, useGetQueryFiltersLegacy, useGetStudios } from 'hooks/useFetchItems';
 import { useApi } from 'hooks/useApi';
 import { useItem } from 'hooks/useItem';
 import globalize from 'lib/globalize';
@@ -356,13 +356,24 @@ const InlineModeLinks: FC<{
 );
 
 /** Lists the library's people of one kind (Actor/Director/Writer) as clickable person cards. */
-const PeopleCards: FC<{ parentId?: string; personType?: PersonKind }> = ({ parentId, personType }) => {
+const PeopleCards: FC<{ parentId?: string; personType?: PersonKind; itemKind?: BaseItemKind }> = ({ parentId, personType, itemKind }) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const { data: people, isPending } = useGetPersons(parentId, personType);
+    const { data: personCounts } = useGetPersonItemCounts(parentId, personType, itemKind);
     const [personSort, setPersonSort] = useState<'az' | 'za' | 'most' | 'fewest'>('az');
 
+    // Overlay the plugin's per-person item counts onto the person items, falling back to the
+    // server's (usually absent) RecursiveItemCount when the endpoint is unavailable.
+    const peopleWithCounts = useMemo(
+        () => (people ?? []).map(person => ({
+            ...person,
+            RecursiveItemCount: personCounts?.[person.Name ?? ''] ?? person.RecursiveItemCount ?? 0
+        })),
+        [people, personCounts]
+    );
+
     const sortedPeople = useMemo(
-        () => [...(people ?? [])].sort((a, b) => {
+        () => [...peopleWithCounts].sort((a, b) => {
             if (personSort === 'most' || personSort === 'fewest') {
                 const diff = (b.RecursiveItemCount ?? 0) - (a.RecursiveItemCount ?? 0);
                 return personSort === 'most' ? diff : -diff;
@@ -371,7 +382,7 @@ const PeopleCards: FC<{ parentId?: string; personType?: PersonKind }> = ({ paren
             const bName = b.Name ?? '';
             return personSort === 'az' ? aName.localeCompare(bName) : bName.localeCompare(aName);
         }),
-        [people, personSort]
+        [peopleWithCounts, personSort]
     );
 
     useEffect(() => {
@@ -833,6 +844,7 @@ const Browse: FC = () => {
                     <PeopleCards
                         parentId={libraryId ?? undefined}
                         personType={activePersonType.personType}
+                        itemKind={itemKind}
                     />
                 </>
             );
