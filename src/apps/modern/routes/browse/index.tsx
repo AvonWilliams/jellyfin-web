@@ -15,7 +15,7 @@ import React, { type FC, useCallback, useEffect, useMemo, useRef, useState } fro
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { applyBrowseModeOrder, getBrowseMode, getBrowseModes } from 'apps/modern/features/libraries/constants/browseModes';
-import { getDecadeStyle, getGenreStyle, getRatingStyle, toTitleCase } from 'apps/modern/features/libraries/constants/pickTiles';
+import { getDecadeStyle, getGenreStyle, getRatingLevel, RATING_LEVEL_LABEL, RATING_LEVEL_ORDER, RATING_LEVELS, toTitleCase, type RatingLevel } from 'apps/modern/features/libraries/constants/pickTiles';
 import TagRibbonsSection from 'apps/modern/features/libraries/components/TagRibbonsSection';
 import { LibraryRoutes } from 'apps/modern/features/libraries/constants/libraryRoutes';
 import { buildPeopleCards } from 'components/cardbuilder/peoplecardbuilder';
@@ -126,7 +126,7 @@ const SORT_PILLS: ReadonlyArray<{ value: 'az' | 'za' | 'most' | 'fewest'; label:
 ];
 
 /** Applies the picker sort to a list of tiles; 'default' keeps each picker's natural order. */
-const sortPickerOptions = <T extends { label: string; value: string }>(
+const sortPickerOptions = <T extends { label: string; value: string; count?: number }>(
     options: T[],
     sort: string,
     counts: Record<string, number>
@@ -138,10 +138,10 @@ const sortPickerOptions = <T extends { label: string; value: string }>(
         return [...options].sort((a, b) => b.label.localeCompare(a.label));
     }
     if (sort === 'most') {
-        return [...options].sort((a, b) => (counts[b.value] ?? counts[b.label] ?? 0) - (counts[a.value] ?? counts[a.label] ?? 0));
+        return [...options].sort((a, b) => (b.count ?? counts[b.value] ?? counts[b.label] ?? 0) - (a.count ?? counts[a.value] ?? counts[a.label] ?? 0));
     }
     if (sort === 'fewest') {
-        return [...options].sort((a, b) => (counts[a.value] ?? counts[a.label] ?? 0) - (counts[b.value] ?? counts[b.label] ?? 0));
+        return [...options].sort((a, b) => (a.count ?? counts[a.value] ?? counts[a.label] ?? 0) - (b.count ?? counts[b.value] ?? counts[b.label] ?? 0));
     }
     if (sort === 'random') {
         const shuffled = [...options];
@@ -544,7 +544,7 @@ const Browse: FC = () => {
             return [];
         }
 
-        let options: Array<{ label: string; value: string; Icon?: BrowseModeDefinition['Icon']; iconColor?: string }> = [];
+        let options: Array<{ label: string; value: string; Icon?: BrowseModeDefinition['Icon']; iconColor?: string; count?: number }> = [];
 
         if (activePicker.picker?.filter === 'Years') {
             const years = filters?.Years;
@@ -569,10 +569,28 @@ const Browse: FC = () => {
                 }
             }
         } else if (activePicker.picker?.filter === 'OfficialRatings') {
-            options = (filters?.OfficialRatings ?? [])
-                .slice()
-                .sort((a, b) => a.localeCompare(b))
-                .map(rating => ({ label: rating, value: rating, ...getRatingStyle(rating) }));
+            // Collapse similar codes (R / R18+ / NC-17 …) into one tile per level, summing counts.
+            const buckets = new Map<RatingLevel, string[]>();
+            for (const rating of filters?.OfficialRatings ?? []) {
+                const level = getRatingLevel(rating);
+                const list = buckets.get(level);
+                if (list) {
+                    list.push(rating);
+                } else {
+                    buckets.set(level, [rating]);
+                }
+            }
+            options = RATING_LEVEL_ORDER
+                .filter(level => buckets.has(level))
+                .map(level => {
+                    const codes = buckets.get(level)!;
+                    return {
+                        label: RATING_LEVEL_LABEL[level],
+                        value: codes.join(','),
+                        count: codes.reduce((sum, code) => sum + (pickerCounts[code] ?? 0), 0),
+                        ...RATING_LEVELS[level]
+                    };
+                });
         } else if (activePicker.picker?.filter === 'Genres') {
             options = buildGenreOptions(filters?.Genres);
         } else if (activePicker.picker?.filter === 'Studios') {
@@ -722,9 +740,6 @@ const Browse: FC = () => {
                         <IconButton onClick={handleBackFromPicker} size='small' aria-label={globalize.translate('ButtonBack')}>
                             <ArrowBack fontSize='small' />
                         </IconButton>
-                        <Typography variant='h2' sx={{ flexGrow: 1 }}>
-                            {globalize.translate(activePicker.label)}
-                        </Typography>
                         <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
                             {isTagPicker && (
                                 <Tooltip title='Shuffle tags'>
@@ -756,14 +771,17 @@ const Browse: FC = () => {
                                     </Typography>
                                 </ButtonBase>
                             ))}
-                            {isTagPicker && (
-                                <Tooltip title={pickerView === 'ribbons' ? 'Switch to grid' : 'Switch to shelves'}>
-                                    <IconButton onClick={togglePickerView} size='small'>
-                                        {pickerView === 'ribbons' ? <ViewModule fontSize='small' /> : <ViewStream fontSize='small' />}
-                                    </IconButton>
-                                </Tooltip>
-                            )}
                         </Box>
+                        <Typography variant='h2' sx={{ flexGrow: 1, textAlign: 'right' }}>
+                            {globalize.translate(activePicker.label)}
+                        </Typography>
+                        {isTagPicker && (
+                            <Tooltip title={pickerView === 'ribbons' ? 'Switch to grid' : 'Switch to shelves'}>
+                                <IconButton onClick={togglePickerView} size='small'>
+                                    {pickerView === 'ribbons' ? <ViewModule fontSize='small' /> : <ViewStream fontSize='small' />}
+                                </IconButton>
+                            </Tooltip>
+                        )}
                     </Stack>
 
                     {isTagPicker && pickerView === 'ribbons' ? (
@@ -791,7 +809,7 @@ const Browse: FC = () => {
                                         value={option.value}
                                         Icon={option.Icon}
                                         iconColor={option.iconColor}
-                                        count={pickerCounts[option.value] ?? pickerCounts[option.label]}
+                                        count={option.count ?? pickerCounts[option.value] ?? pickerCounts[option.label]}
                                         onSelect={onPickClick}
                                     />
                                 ))}
