@@ -11,16 +11,17 @@ Movies or TV library, instead of dropping straight into one long alphabetical li
 
 Opening a Movies or TV library shows **Browse by…** — a grid of tiles, each a different way in:
 
-**All** · **Unwatched** · **Just Added** · **Best Unseen** · **Random** · **Favorites** ·
-**Genres** · **Highest Rated** · **Top Rated** · **Trending** · **New Releases** ·
-**Decades** · **Studios / Networks** · **Recently Played** · **Age Rating** ·
-**Critics' Picks** *(films only)* · **Longest**
+- **All** · **Trending** · **Top Rated** · **New Releases** · **Just Added** · **Random**
+- **Categories** — Genres, Studios, Decades, Year
+- **Mood & Themes** — Mood, Story Themes, Plot Elements, Worlds, Styles
+- **People** — Actors, Directors, Writers
+- **Discover** — Critics' Picks *(films only)*, Hidden Gems, Age Rating, Watch Again
 
 Nothing is hidden — the first tile, **All**, is the ordinary list exactly as it was. Each tile
 also remembers its own sort, so changing the sort inside "Just Added" leaves your normal library
 view alone.
 
-That is 18 changed files against upstream, on the [`browse-modes`](../../tree/browse-modes)
+That is 60 changed files against upstream, on the [`browse-modes`](../../tree/browse-modes)
 branch. Everything else is stock Jellyfin.
 
 > **This fork covers the browser and the Jellyfin _phone_ app** — the phone app is a WebView over
@@ -32,14 +33,15 @@ branch. Everything else is stock Jellyfin.
 
 You almost certainly do not want to build this. Grab the prebuilt bundle:
 
-**1. Download** `jellyfin-web-browse-modes.zip` from the
-[Browse Modes releases](https://github.com/AvonWilliams/jellyfin-browse-modes/releases).
+**1. Download** the latest `jellyfin-web-browse-modes-<version>.zip` from the
+[Browse Modes web releases](https://github.com/AvonWilliams/jellyfin-web/releases).
 
-**2. Unpack it over your server's web directory.** For the official Docker image:
+**2. Unpack it over your server's web directory.** The zip is flat (no wrapper), so unzip into a
+fresh directory first. For the official Docker image:
 
 ```bash
-unzip jellyfin-web-browse-modes.zip
-docker cp dist/. <your-jellyfin-container>:/jellyfin/jellyfin-web/
+mkdir -p /tmp/jbm && unzip -d /tmp/jbm jellyfin-web-browse-modes-<version>.zip
+docker cp /tmp/jbm/. <your-jellyfin-container>:/jellyfin/jellyfin-web/
 ```
 
 Without Docker it is wherever `--webdir` points, typically `/usr/share/jellyfin/web`.
@@ -100,7 +102,8 @@ docker exec <container> cp -a /jellyfin/jellyfin-web /jellyfin/jellyfin-web.bak
 ```
 
 ### Other
-- Built against **Jellyfin 12.0-rc3**. Other versions may work but are untested.
+- Built against **Jellyfin 12.2**. It will not work correctly on 12.0/12.1 (client and server are
+  versioned together).
 - The tile page is skipped entirely if you have set a specific landing view for a library.
 
 ## Documentation
