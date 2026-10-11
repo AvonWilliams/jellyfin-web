@@ -124,7 +124,7 @@ const fetchGetPersons = async (
                 userId: user.Id,
                 parentId: parentId ?? undefined,
                 personTypes: [personType],
-                fields: [ItemFields.PrimaryImageAspectRatio],
+                fields: [ItemFields.PrimaryImageAspectRatio, ItemFields.RecursiveItemCount],
                 enableImageTypes: [ImageType.Primary],
                 limit: 500
             },
