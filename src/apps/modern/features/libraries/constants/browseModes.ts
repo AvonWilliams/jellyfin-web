@@ -97,7 +97,7 @@ const decadesMode: BrowseModeDefinition = {
     mode: BrowseMode.Decades,
     label: 'BrowseModeDecades',
     Icon: CalendarMonth,
-    iconColor: '#7E9CD8',
+    iconColor: '#4FB3A0',
     tier: 'meta',
     picker: { filter: 'Years' }
 };
