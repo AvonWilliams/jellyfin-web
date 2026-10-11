@@ -13,6 +13,7 @@ export function buildPeopleCards(items, options) {
         showTitle: true,
         cardFooterAside: 'none',
         showPersonRoleOrType: true,
+        showItemCounts: true,
         cardCssClass: 'personCard',
         defaultCardImageIcon: 'person'
     });
