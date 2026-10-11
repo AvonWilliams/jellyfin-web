@@ -146,6 +146,43 @@ export const useGetPersons = (parentId: ParentId, personType?: PersonKind) => {
     });
 };
 
+const fetchGetPersonItemCounts = async (
+    currentApi: JellyfinApiContext,
+    parentId: ParentId,
+    personType: PersonKind,
+    itemType: BaseItemKind | undefined,
+    options?: AxiosRequestConfig
+) => {
+    const { api } = currentApi;
+    if (api) {
+        const { data } = await api.axiosInstance.get<Record<string, number>>(
+            `${api.basePath}/Discover/Counts`,
+            {
+                params: {
+                    type: 'personitems',
+                    parentId: parentId ?? undefined,
+                    itemTypes: itemType,
+                    personTypes: personType
+                },
+                headers: { Authorization: api.authorizationHeader },
+                signal: options?.signal
+            }
+        );
+        return data;
+    }
+    return {};
+};
+
+export const useGetPersonItemCounts = (parentId: ParentId, personType?: PersonKind, itemType?: BaseItemKind) => {
+    const currentApi = useApi();
+    return useQuery({
+        queryKey: ['PersonItemCounts', parentId, personType, itemType],
+        queryFn: ({ signal }) =>
+            fetchGetPersonItemCounts(currentApi, parentId, personType!, itemType, { signal }),
+        enabled: !!currentApi.api && !!parentId && !!personType
+    });
+};
+
 const fetchGetQueryFiltersLegacy = async (
     currentApi: JellyfinApiContext,
     parentId: ParentId,
