@@ -1,11 +1,13 @@
 import { BaseItemKind } from '@jellyfin/sdk/lib/generated-client/models/base-item-kind';
 import { CollectionType } from '@jellyfin/sdk/lib/generated-client/models/collection-type';
+import Box from '@mui/material/Box';
 import React, { type FC } from 'react';
 
 import viewsByKind from 'apps/modern/features/libraries/constants/views';
 import Page from 'components/Page';
 import useCurrentTab from 'hooks/useCurrentTab';
 
+import LibraryBackdrop from './LibraryBackdrop';
 import PageTabContent from './PageTabContent';
 
 interface LibraryPageProps {
@@ -50,11 +52,14 @@ const LibraryPage: FC<LibraryPageProps> = ({
             className={'mainAnimatedPage libraryPage pageWithAbsoluteTabs withTabs'}
             backDropType={PAGE_BACKDROPS[type]}
         >
-            <PageTabContent
-                key={`${currentTab.viewType}-${libraryId}`}
-                currentTab={currentTab}
-                parentId={libraryId}
-            />
+            <LibraryBackdrop libraryId={libraryId} />
+            <Box sx={{ position: 'relative', zIndex: 1 }}>
+                <PageTabContent
+                    key={`${currentTab.viewType}-${libraryId}`}
+                    currentTab={currentTab}
+                    parentId={libraryId}
+                />
+            </Box>
         </Page>
     );
 };

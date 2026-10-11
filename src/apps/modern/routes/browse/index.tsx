@@ -5,6 +5,7 @@ import Box from '@mui/material/Box';
 import ButtonBase from '@mui/material/ButtonBase';
 import IconButton from '@mui/material/IconButton';
 import Stack from '@mui/material/Stack';
+import SvgIcon, { type SvgIconProps } from '@mui/material/SvgIcon';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import ArrowBack from '@mui/icons-material/ArrowBack';
@@ -16,6 +17,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { applyBrowseModeOrder, getBrowseMode, getBrowseModes } from 'apps/modern/features/libraries/constants/browseModes';
 import { getDecadeStyle, getGenreStyle, getRatingLevel, RATING_LEVEL_LABEL, RATING_LEVEL_ORDER, RATING_LEVELS, toTitleCase, type RatingLevel } from 'apps/modern/features/libraries/constants/pickTiles';
+import LibraryBackdrop from 'apps/modern/features/libraries/components/LibraryBackdrop';
 import TagRibbonsSection from 'apps/modern/features/libraries/components/TagRibbonsSection';
 import { LibraryRoutes } from 'apps/modern/features/libraries/constants/libraryRoutes';
 import { buildPeopleCards } from 'components/cardbuilder/peoplecardbuilder';
@@ -29,6 +31,10 @@ import globalize from 'lib/globalize';
 import { BrowseMode, type BrowseModeDefinition } from 'types/browseMode';
 
 const DECADE_LENGTH = 10;
+
+/** The full range of individual years offered by the Year picker, newest first. */
+const YEAR_MIN = 1900;
+const YEAR_MAX = 2050;
 
 /**
  * Shared theme-aware glass surface. Uses the paper channel so the tint follows the active theme
@@ -49,31 +55,6 @@ const GROUP_LABEL_SX = {
     color: 'text.secondary',
     letterSpacing: '0.03em',
     paddingLeft: '4px'
-} as const;
-
-/** Sharp library backdrop base image, filling the whole browse surface. */
-const BACKDROP_BASE_SX = {
-    position: 'absolute',
-    inset: 0,
-    width: '100%',
-    height: '100%',
-    objectFit: 'cover',
-    objectPosition: 'center'
-} as const;
-
-/** Frosted (blurred) overlay of the same image, clearest at the centre and frosting toward the edges. */
-const BACKDROP_FROST_SX = {
-    ...BACKDROP_BASE_SX,
-    filter: 'blur(20px) saturate(130%)',
-    WebkitMaskImage: 'radial-gradient(ellipse at center, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.2) 32%, black 82%)',
-    maskImage: 'radial-gradient(ellipse at center, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.2) 32%, black 82%)'
-} as const;
-
-/** Light scrim that fades toward the bottom, keeping the frosted zone dim enough for tiles. */
-const BACKDROP_SCRIM_SX = {
-    position: 'absolute',
-    inset: 0,
-    background: 'linear-gradient(to bottom, rgba(var(--jf-palette-background-paperChannel, 32 32 32) / 0.55), rgba(var(--jf-palette-background-paperChannel, 32 32 32) / 0.2) 45%, transparent 80%)'
 } as const;
 
 /** Maps a picker's filter kind to the server's /Discover/Counts type. */
@@ -125,6 +106,11 @@ const SORT_PILLS: ReadonlyArray<{ value: 'az' | 'za' | 'most' | 'fewest'; label:
     { value: 'fewest', label: 'Fewest items' }
 ];
 
+/** The A–Z / Z–A subset of SORT_PILLS shown on People pages (no per-person item counts yet). */
+const PERSON_SORT_PILLS: ReadonlyArray<{ value: 'az' | 'za'; label: string }> = SORT_PILLS.filter(
+    (pill): pill is { value: 'az' | 'za'; label: string } => pill.value === 'az' || pill.value === 'za'
+);
+
 /** Applies the picker sort to a list of tiles; 'default' keeps each picker's natural order. */
 const sortPickerOptions = <T extends { label: string; value: string; count?: number }>(
     options: T[],
@@ -154,6 +140,27 @@ const sortPickerOptions = <T extends { label: string; value: string; count?: num
     return options;
 };
 
+/** Procedural glyph for individual-year tiles: the four-digit year drawn large, no calendar. */
+const yearNumberIcon = (year: number): BrowseModeDefinition['Icon'] => {
+    const Icon = (props: SvgIconProps) => (
+        <SvgIcon viewBox='0 0 100 100' {...props}>
+            <text
+                x='50'
+                y='50'
+                textAnchor='middle'
+                dominantBaseline='central'
+                fontSize='34'
+                fontWeight='600'
+                fill='currentColor'
+                fontFamily='sans-serif'
+            >
+                {year}
+            </text>
+        </SvgIcon>
+    );
+    return Icon as unknown as BrowseModeDefinition['Icon'];
+};
+
 /** The query-filters fields the child-tile counts read from. */
 type BrowseFilters = {
     Genres?: string[] | null;
@@ -162,13 +169,20 @@ type BrowseFilters = {
     Tags?: string[] | null;
 };
 
-/** Number of entries under a meta child (genres, studios, decades, years, ratings, tags). */
+/** Number of entries under a meta child (people, genres, studios, decades, years, ratings, tags). */
 const childEntryCount = (
     definition: BrowseModeDefinition,
     filters: BrowseFilters | undefined,
-    studios: Array<{ Name?: string | null }> | undefined
+    studios: Array<{ Name?: string | null }> | undefined,
+    personCounts: Record<string, number> | undefined
 ): number => {
     switch (definition.mode) {
+        case BrowseMode.Actors:
+            return personCounts?.Actor ?? 0;
+        case BrowseMode.Directors:
+            return personCounts?.Director ?? 0;
+        case BrowseMode.Writers:
+            return personCounts?.Writer ?? 0;
         case BrowseMode.Genres:
             return filters?.Genres?.length ?? 0;
         case BrowseMode.Studios:
@@ -354,25 +368,35 @@ const InlineModeLinks: FC<{
 const PeopleCards: FC<{ parentId?: string; personType?: PersonKind }> = ({ parentId, personType }) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const { data: people, isPending } = useGetPersons(parentId, personType);
+    const [personSort, setPersonSort] = useState<'az' | 'za'>('az');
+
+    const sortedPeople = useMemo(
+        () => [...(people ?? [])].sort((a, b) => {
+            const aName = a.Name ?? '';
+            const bName = b.Name ?? '';
+            return personSort === 'az' ? aName.localeCompare(bName) : bName.localeCompare(aName);
+        }),
+        [people, personSort]
+    );
 
     useEffect(() => {
         const container = containerRef.current;
-        if (!container || isPending || !people?.length) {
+        if (!container || isPending || !sortedPeople.length) {
             return;
         }
 
-        buildPeopleCards(people, {
+        buildPeopleCards(sortedPeople, {
             itemsContainer: container,
             coverImage: true,
             shape: CardShape.PortraitOverflow
         });
-    }, [people, isPending]);
+    }, [sortedPeople, isPending]);
 
     if (isPending) {
         return <Loading />;
     }
 
-    if (!people?.length) {
+    if (!sortedPeople.length) {
         return (
             <Typography sx={{ color: 'text.secondary' }}>
                 {globalize.translate('MessageNothingHere')}
@@ -380,7 +404,36 @@ const PeopleCards: FC<{ parentId?: string; personType?: PersonKind }> = ({ paren
         );
     }
 
-    return <div ref={containerRef} className='itemsContainer vertical-wrap' />;
+    return (
+        <Stack spacing={2}>
+            <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+                {PERSON_SORT_PILLS.map(pill => (
+                    <ButtonBase
+                        key={pill.value}
+                        onClick={() => setPersonSort(pill.value)}
+                        aria-pressed={personSort === pill.value}
+                        sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            padding: '4px 14px',
+                            borderRadius: '999px',
+                            border: `1px solid ${personSort === pill.value ? 'var(--jf-palette-text-primary, rgba(255, 255, 255, 0.9))' : 'var(--jf-palette-divider, rgba(255, 255, 255, 0.12))'}`,
+                            backgroundColor: personSort === pill.value ? 'rgba(var(--jf-palette-background-paperChannel, 32 32 32) / 0.5)' : 'transparent',
+                            transition: 'background-color 120ms ease, border-color 120ms ease'
+                        }}
+                    >
+                        <Typography
+                            variant='caption'
+                            sx={{ color: personSort === pill.value ? 'text.primary' : 'text.secondary', fontWeight: personSort === pill.value ? 600 : 400, lineHeight: 1, fontSize: '0.875rem' }}
+                        >
+                            {pill.label}
+                        </Typography>
+                    </ButtonBase>
+                ))}
+            </Box>
+            <div ref={containerRef} className='itemsContainer vertical-wrap' />
+        </Stack>
+    );
 };
 
 const Browse: FC = () => {
@@ -403,10 +456,16 @@ const Browse: FC = () => {
     const [pickerSort, setPickerSort] = useState<PickerSort>(
         () => (localStorage.getItem('browsePickerSort') as PickerSort) ?? 'default'
     );
-    const { __legacyApiClient__, api } = useApi();
+    const { api } = useApi();
 
     // Picker value counts from the plugin's /Discover/Counts endpoint, shown as tile badges.
     const [pickerCounts, setPickerCounts] = useState<Record<string, number>>({});
+
+    // Person and per-year counts from the same endpoint. People counts back the People meta tile's
+    // child badges; year counts back the individual-year tiles. Both are fetched up front because
+    // the People counts are needed on the home grid regardless of the active picker.
+    const [personCounts, setPersonCounts] = useState<Record<string, number>>({});
+    const [yearCounts, setYearCounts] = useState<Record<string, number>>({});
 
     // Infinite scroll — grow the visible slice as the sentinel scrolls into view.
     // Ribbons are heavier (each loads 25 items) so use a smaller batch.
@@ -423,23 +482,6 @@ const Browse: FC = () => {
     const collectionType = searchParams.get('collectionType') as CollectionType | null;
 
     const { data: library } = useItem(libraryId ?? undefined);
-
-    // The library's own artwork (backdrop fanart, falling back to the primary image) used as the
-    // blurred backdrop behind the whole browse surface.
-    const libraryBackdropUrl = useMemo(() => {
-        if (!__legacyApiClient__ || !library?.Id) {
-            return undefined;
-        }
-        const backdropTag = library.BackdropImageTags?.[0];
-        if (backdropTag) {
-            return __legacyApiClient__.getScaledImageUrl(library.Id, { type: 'Backdrop', tag: backdropTag, maxWidth: 2560 });
-        }
-        const primaryTag = library.ImageTags?.Primary;
-        if (primaryTag) {
-            return __legacyApiClient__.getScaledImageUrl(library.Id, { type: 'Primary', tag: primaryTag, maxWidth: 2560 });
-        }
-        return undefined;
-    }, [__legacyApiClient__, library]);
 
     // The administrator's tile order and visibility, fetched from the plugin. An empty or
     // missing layout falls back to the built-in order with every mode shown. Until the fetch
@@ -526,6 +568,72 @@ const Browse: FC = () => {
         };
     }, [api, libraryId, itemKind, activePicker?.picker?.filter]);
 
+    // Fetch person counts (Actor/Director/Writer) backing the People meta tile's child badges.
+    useEffect(() => {
+        if (!api || !libraryId) {
+            setPersonCounts({});
+            return;
+        }
+
+        const cacheKey = `${libraryId}:person`;
+        const cached = pickerCountsCache.get(cacheKey);
+        if (cached) {
+            setPersonCounts(cached);
+            return;
+        }
+
+        let cancelled = false;
+        api.axiosInstance
+            .get<Record<string, number>>(`${api.basePath}/Discover/Counts`, {
+                params: { type: 'person', parentId: libraryId, itemTypes: itemKind },
+                headers: { Authorization: api.authorizationHeader }
+            })
+            .then(({ data }) => {
+                pickerCountsCache.set(cacheKey, data);
+                if (!cancelled) setPersonCounts(data);
+            })
+            .catch(() => {
+                if (!cancelled) setPersonCounts({});
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [api, libraryId, itemKind]);
+
+    // Fetch per-year item counts backing the individual-year tiles.
+    useEffect(() => {
+        if (!api || !libraryId) {
+            setYearCounts({});
+            return;
+        }
+
+        const cacheKey = `${libraryId}:year`;
+        const cached = pickerCountsCache.get(cacheKey);
+        if (cached) {
+            setYearCounts(cached);
+            return;
+        }
+
+        let cancelled = false;
+        api.axiosInstance
+            .get<Record<string, number>>(`${api.basePath}/Discover/Counts`, {
+                params: { type: 'year', parentId: libraryId, itemTypes: itemKind },
+                headers: { Authorization: api.authorizationHeader }
+            })
+            .then(({ data }) => {
+                pickerCountsCache.set(cacheKey, data);
+                if (!cancelled) setYearCounts(data);
+            })
+            .catch(() => {
+                if (!cancelled) setYearCounts({});
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [api, libraryId, itemKind]);
+
     // Incrementing counter forces a fresh random shuffle each click.
     const [shuffleKey, setShuffleKey] = useState(0);
     const handleShuffle = useCallback(() => {
@@ -547,18 +655,19 @@ const Browse: FC = () => {
         let options: Array<{ label: string; value: string; Icon?: BrowseModeDefinition['Icon']; iconColor?: string; count?: number }> = [];
 
         if (activePicker.picker?.filter === 'Years') {
-            const years = filters?.Years;
-            if (years?.length) {
-                if (activePicker.picker.individualYears) {
-                    options = [...new Set(years)]
-                        .sort((a, b) => b - a)
-                        .map(year => ({
-                            label: String(year),
-                            value: String(year),
-                            Icon: activePicker.Icon,
-                            iconColor: activePicker.iconColor
-                        }));
-                } else {
+            if (activePicker.picker.individualYears) {
+                // Offer the full 1900–2050 range, newest first, each drawn as its four-digit year.
+                options = Array.from({ length: YEAR_MAX - YEAR_MIN + 1 }, (_, offset) => YEAR_MAX - offset)
+                    .map(year => ({
+                        label: String(year),
+                        value: String(year),
+                        Icon: yearNumberIcon(year),
+                        iconColor: activePicker.iconColor,
+                        count: yearCounts[String(year)]
+                    }));
+            } else {
+                const years = filters?.Years;
+                if (years?.length) {
                     const startYears = [...new Set(years.map(year => Math.floor(year / DECADE_LENGTH) * DECADE_LENGTH))];
                     startYears.sort((a, b) => b - a);
                     options = startYears.map(startYear => ({
@@ -608,7 +717,7 @@ const Browse: FC = () => {
         }
 
         return sortPickerOptions(options, pickerSort, pickerCounts);
-    }, [activePicker, filters?.Years, filters?.OfficialRatings, filters?.Genres, studios, filters?.Tags, pickerSort, pickerCounts, shuffleKey]);
+    }, [activePicker, filters?.Years, filters?.OfficialRatings, filters?.Genres, studios, filters?.Tags, pickerSort, pickerCounts, yearCounts, shuffleKey]);
 
     // Grow the visible slice when the sentinel scrolls into view.
     useEffect(() => {
@@ -841,7 +950,7 @@ const Browse: FC = () => {
                                 key={definition.mode}
                                 definition={definition}
                                 onSelect={onModeClick}
-                                count={childEntryCount(definition, filters, studios) || undefined}
+                                count={childEntryCount(definition, filters, studios, personCounts) || undefined}
                             />
                         ))}
                     </TileGrid>
@@ -889,7 +998,7 @@ const Browse: FC = () => {
                             .map(child => getBrowseMode(collectionType, child))
                             .filter((child): child is BrowseModeDefinition => Boolean(child))}
                         onSelect={openLeaf}
-                        getCount={child => childEntryCount(child, filters, studios)}
+                        getCount={child => childEntryCount(child, filters, studios, personCounts)}
                     />
                 );
             } else {
@@ -926,18 +1035,7 @@ const Browse: FC = () => {
             className='mainAnimatedPage libraryPage'
             title={library?.Name ?? undefined}
         >
-            <Box
-                aria-hidden
-                sx={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 0, overflow: 'hidden', pointerEvents: 'none' }}
-            >
-                {libraryBackdropUrl ? (
-                    <>
-                        <Box component='img' src={libraryBackdropUrl} alt='' sx={BACKDROP_BASE_SX} />
-                        <Box component='img' src={libraryBackdropUrl} alt='' sx={BACKDROP_FROST_SX} />
-                    </>
-                ) : null}
-                <Box aria-hidden sx={BACKDROP_SCRIM_SX} />
-            </Box>
+            <LibraryBackdrop libraryId={libraryId} />
 
             <Box className='padded-left padded-right padded-top padded-bottom-page' sx={{ position: 'relative', zIndex: 1 }}>
                 {isHomeView ? (
