@@ -708,6 +708,10 @@ function getItemCountsHtml(options, item) {
             globalize.translate('ValueEpisodeCount', item.RecursiveItemCount);
 
         counts.push(childText);
+    } else if (item.Type === 'Person') {
+        if (item.RecursiveItemCount > 0) {
+            counts.push(globalize.translate('ItemCount', item.RecursiveItemCount));
+        }
     }
 
     return counts.join(', ');

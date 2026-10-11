@@ -32,10 +32,6 @@ import { BrowseMode, type BrowseModeDefinition } from 'types/browseMode';
 
 const DECADE_LENGTH = 10;
 
-/** The full range of individual years offered by the Year picker, newest first. */
-const YEAR_MIN = 1900;
-const YEAR_MAX = 2050;
-
 /**
  * Shared theme-aware glass surface. Uses the paper channel so the tint follows the active theme
  * (dark/light) instead of a fixed dark rgba, matching the existing `.detailRibbon` convention.
@@ -105,11 +101,6 @@ const SORT_PILLS: ReadonlyArray<{ value: 'az' | 'za' | 'most' | 'fewest'; label:
     { value: 'most', label: 'Most items' },
     { value: 'fewest', label: 'Fewest items' }
 ];
-
-/** The A–Z / Z–A subset of SORT_PILLS shown on People pages (no per-person item counts yet). */
-const PERSON_SORT_PILLS: ReadonlyArray<{ value: 'az' | 'za'; label: string }> = SORT_PILLS.filter(
-    (pill): pill is { value: 'az' | 'za'; label: string } => pill.value === 'az' || pill.value === 'za'
-);
 
 /** Applies the picker sort to a list of tiles; 'default' keeps each picker's natural order. */
 const sortPickerOptions = <T extends { label: string; value: string; count?: number }>(
@@ -368,10 +359,14 @@ const InlineModeLinks: FC<{
 const PeopleCards: FC<{ parentId?: string; personType?: PersonKind }> = ({ parentId, personType }) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const { data: people, isPending } = useGetPersons(parentId, personType);
-    const [personSort, setPersonSort] = useState<'az' | 'za'>('az');
+    const [personSort, setPersonSort] = useState<'az' | 'za' | 'most' | 'fewest'>('az');
 
     const sortedPeople = useMemo(
         () => [...(people ?? [])].sort((a, b) => {
+            if (personSort === 'most' || personSort === 'fewest') {
+                const diff = (b.RecursiveItemCount ?? 0) - (a.RecursiveItemCount ?? 0);
+                return personSort === 'most' ? diff : -diff;
+            }
             const aName = a.Name ?? '';
             const bName = b.Name ?? '';
             return personSort === 'az' ? aName.localeCompare(bName) : bName.localeCompare(aName);
@@ -407,7 +402,7 @@ const PeopleCards: FC<{ parentId?: string; personType?: PersonKind }> = ({ paren
     return (
         <Stack spacing={2}>
             <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
-                {PERSON_SORT_PILLS.map(pill => (
+                {SORT_PILLS.map(pill => (
                     <ButtonBase
                         key={pill.value}
                         onClick={() => setPersonSort(pill.value)}
@@ -656,8 +651,9 @@ const Browse: FC = () => {
 
         if (activePicker.picker?.filter === 'Years') {
             if (activePicker.picker.individualYears) {
-                // Offer the full 1900–2050 range, newest first, each drawn as its four-digit year.
-                options = Array.from({ length: YEAR_MAX - YEAR_MIN + 1 }, (_, offset) => YEAR_MAX - offset)
+                // Only the years that actually have items, newest first, each drawn as its four-digit year.
+                options = [...new Set(filters?.Years ?? [])]
+                    .sort((a, b) => b - a)
                     .map(year => ({
                         label: String(year),
                         value: String(year),
