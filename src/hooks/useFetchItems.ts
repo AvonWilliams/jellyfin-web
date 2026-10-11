@@ -234,10 +234,10 @@ const fetchDiscoverList = (
     viewType: LibraryTab,
     parentId: ParentId,
     itemType: BaseItemKind[],
-    ranked: { source: string | undefined; timeWindow: string | undefined },
+    ranked: { source: string | undefined },
     options?: AxiosRequestConfig
 ) => {
-    const { source, timeWindow } = ranked;
+    const { source } = ranked;
     const list = viewType === LibraryTab.TopRated ? 'TopRated' : 'Trending';
     const kind = itemType.includes(BaseItemKind.Series) ? 'Shows' : 'Movies';
 
@@ -249,8 +249,7 @@ const fetchDiscoverList = (
                 parentId: parentId ?? undefined,
                 fields: ItemFields.PrimaryImageAspectRatio,
                 limit: 500,
-                source,
-                window: viewType === LibraryTab.Trending ? timeWindow : undefined
+                source
             },
             headers: { Authorization: api.authorizationHeader },
             signal: options?.signal
@@ -264,7 +263,7 @@ const fetchGetItemsViewByType = async (
     parentId: ParentId,
     itemType: BaseItemKind[],
     libraryViewSettings: LibraryViewSettings,
-    ranked: { source: string | undefined; timeWindow: string | undefined },
+    ranked: { source: string | undefined },
     options?: AxiosRequestConfig
 ) => {
     const { api, user } = currentApi;
@@ -440,8 +439,7 @@ export const useGetItemsViewByType = (
     parentId: ParentId,
     itemType: BaseItemKind[] = [],
     libraryViewSettings: LibraryViewSettings,
-    source?: string,
-    timeWindow?: string
+    source?: string
 ) => {
     const currentApi = useApi();
     return useQuery({
@@ -455,8 +453,7 @@ export const useGetItemsViewByType = (
             {
                 itemType,
                 libraryViewSettings,
-                source,
-                window: timeWindow
+                source
             }
         ],
         queryFn: ({ signal }) =>
@@ -466,7 +463,7 @@ export const useGetItemsViewByType = (
                 parentId,
                 itemType,
                 libraryViewSettings!,
-                { source, timeWindow },
+                { source },
                 { signal }
             ),
         refetchOnWindowFocus: false,
