@@ -114,7 +114,7 @@ export const getGenreStyle = (genre: string): PickTileStyle =>
 /**
  * Age ratings graded by how restrictive they are, from everyone through to adults only.
  */
-const RATING_LEVELS = {
+export const RATING_LEVELS = {
     everyone: { Icon: ChildCare, iconColor: '#5CD672' },
     guidance: { Icon: FamilyRestroom, iconColor: '#9CCC65' },
     teen: { Icon: Groups, iconColor: '#EECE55' },
@@ -123,43 +123,58 @@ const RATING_LEVELS = {
     unrated: { Icon: HelpOutline, iconColor: '#9AA5B1' }
 } as const satisfies Record<string, PickTileStyle>;
 
+export type RatingLevel = keyof typeof RATING_LEVELS;
+
+/** Display order for grouped rating tiles, most restrictive first. */
+export const RATING_LEVEL_ORDER: readonly RatingLevel[] = ['adult', 'mature', 'teen', 'guidance', 'everyone', 'unrated'];
+
+/** Canonical label shown for each grouped rating level. */
+export const RATING_LEVEL_LABEL: Record<RatingLevel, string> = {
+    everyone: 'G',
+    guidance: 'PG',
+    teen: 'PG-13',
+    mature: 'MA',
+    adult: 'R',
+    unrated: 'Unrated'
+};
+
 /**
  * Ratings whose meaning cannot be read off a number.
  *
  * Order matters: the first match wins, so longer codes have to precede the shorter ones they
  * start with, otherwise `R18+` would be read as `R` and `PG-13` as `PG`.
  */
-const RATING_TOKENS: ReadonlyArray<readonly [string, PickTileStyle]> = [
-    ['NC-17', RATING_LEVELS.adult],
-    ['R18+', RATING_LEVELS.adult],
-    ['X18+', RATING_LEVELS.adult],
-    ['TV-MA', RATING_LEVELS.adult],
-    ['MA15+', RATING_LEVELS.mature],
-    ['PG-13', RATING_LEVELS.teen],
-    ['TV-14', RATING_LEVELS.teen],
-    ['TV-PG', RATING_LEVELS.guidance],
-    ['TV-Y7', RATING_LEVELS.guidance],
-    ['TV-Y', RATING_LEVELS.everyone],
-    ['TV-G', RATING_LEVELS.everyone],
-    ['AO', RATING_LEVELS.adult],
-    ['MA', RATING_LEVELS.mature],
-    ['PG', RATING_LEVELS.guidance],
-    ['R', RATING_LEVELS.adult],
-    ['X', RATING_LEVELS.adult],
-    ['M', RATING_LEVELS.teen],
-    ['T', RATING_LEVELS.teen],
-    ['G', RATING_LEVELS.everyone],
-    ['U', RATING_LEVELS.everyone],
-    ['E', RATING_LEVELS.everyone]
+const RATING_TOKENS: ReadonlyArray<readonly [string, RatingLevel]> = [
+    ['NC-17', 'adult'],
+    ['R18+', 'adult'],
+    ['X18+', 'adult'],
+    ['TV-MA', 'adult'],
+    ['MA15+', 'mature'],
+    ['PG-13', 'teen'],
+    ['TV-14', 'teen'],
+    ['TV-PG', 'guidance'],
+    ['TV-Y7', 'guidance'],
+    ['TV-Y', 'everyone'],
+    ['TV-G', 'everyone'],
+    ['AO', 'adult'],
+    ['MA', 'mature'],
+    ['PG', 'guidance'],
+    ['R', 'adult'],
+    ['X', 'adult'],
+    ['M', 'teen'],
+    ['T', 'teen'],
+    ['G', 'everyone'],
+    ['U', 'everyone'],
+    ['E', 'everyone']
 ];
 
 /** Age in years above which each level applies, most restrictive first. */
-const RATING_AGES: ReadonlyArray<readonly [number, PickTileStyle]> = [
-    [18, RATING_LEVELS.adult],
-    [15, RATING_LEVELS.mature],
-    [12, RATING_LEVELS.teen],
-    [6, RATING_LEVELS.guidance],
-    [0, RATING_LEVELS.everyone]
+const RATING_AGES: ReadonlyArray<readonly [number, RatingLevel]> = [
+    [18, 'adult'],
+    [15, 'mature'],
+    [12, 'teen'],
+    [6, 'guidance'],
+    [0, 'everyone']
 ];
 
 /**
@@ -173,14 +188,14 @@ export const toTitleCase = (str: string): string =>
             part
     ).join('');
 
-export const getRatingStyle = (rating: string): PickTileStyle => {
+export const getRatingLevel = (rating: string): RatingLevel => {
     // Jellyfin prefixes ratings with the country they belong to, such as "AU-MA15+". The
     // negative lookahead matters: without it the US television ratings lose their own "TV-"
     // prefix, turning TV-MA into MA and TV-Y7 into an unrecognised Y7.
     const normalized = rating.trim().toUpperCase().replace(/^(?!TV-)[A-Z]{2}-/, '');
 
     if (!normalized || /^(NR|UR|UNRATED|NOT RATED|NONE)$/.test(normalized)) {
-        return RATING_LEVELS.unrated;
+        return 'unrated';
     }
 
     const token = RATING_TOKENS.find(([code]) => normalized.startsWith(code));
@@ -192,8 +207,10 @@ export const getRatingStyle = (rating: string): PickTileStyle => {
     const age = /^(\d{1,2})/.exec(normalized);
     if (age) {
         const years = parseInt(age[1], 10);
-        return RATING_AGES.find(([minimum]) => years >= minimum)?.[1] ?? RATING_LEVELS.unrated;
+        return RATING_AGES.find(([minimum]) => years >= minimum)?.[1] ?? 'unrated';
     }
 
-    return RATING_LEVELS.unrated;
+    return 'unrated';
 };
+
+export const getRatingStyle = (rating: string): PickTileStyle => RATING_LEVELS[getRatingLevel(rating)];

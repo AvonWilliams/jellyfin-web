@@ -12,7 +12,7 @@ import { LibraryTab } from 'types/libraryTab';
 import { LibraryTabContent } from 'types/libraryTabContent';
 
 import { getBrowseMode } from '../constants/browseModes';
-import { DEFAULT_BROWSE_SOURCE } from '../constants/browseSources';
+import { DEFAULT_BROWSE_SOURCE, getEnabledSources } from '../constants/browseSources';
 import { LibraryRoutes } from '../constants/libraryRoutes';
 import { isLibraryPath } from '../utils/path';
 import { getDefaultLibraryViewSettings, getSettingsKey } from '../utils/settings';
@@ -96,12 +96,24 @@ export const LibraryProvider: FC<PropsWithChildren<unknown>> = ({ children }) =>
         DEFAULT_BROWSE_SOURCE
     );
 
+    // A source persisted for one library kind may not exist on another (Letterboxd/RT are
+    // movie-only); fall back to the default when the saved source isn't offered for this view.
+    const effectiveSource = useMemo(() => {
+        if (!isRankedView || !viewType) {
+            return undefined;
+        }
+        const isShows = collectionType === CollectionType.Tvshows;
+        return getEnabledSources(viewType, isShows).some(s => s.id === source)
+            ? source
+            : DEFAULT_BROWSE_SOURCE;
+    }, [isRankedView, viewType, collectionType, source]);
+
     const itemsResult = useGetItemsViewByType(
         viewType,
         libraryId,
         content?.itemType,
         viewSettings,
-        isRankedView ? source : undefined
+        effectiveSource
     );
 
     const state = useMemo(() => ({
@@ -113,9 +125,9 @@ export const LibraryProvider: FC<PropsWithChildren<unknown>> = ({ children }) =>
         viewSettings,
         setViewSettings,
         itemsResult,
-        source: isRankedView ? source : undefined,
+        source: effectiveSource,
         setSource: isRankedView ? setSource : undefined
-    }), [collectionType, isLibPath, id, content, viewSettings, setViewSettings, itemsResult, isRankedView, source, setSource]);
+    }), [collectionType, isLibPath, id, content, viewSettings, setViewSettings, itemsResult, isRankedView, effectiveSource, setSource]);
 
     return (
         <LibraryContext.Provider value={state}>
