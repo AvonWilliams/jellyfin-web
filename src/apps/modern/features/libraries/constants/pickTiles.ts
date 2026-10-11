@@ -1,5 +1,6 @@
 import type { SvgIconComponent } from '@mui/icons-material';
 import Album from '@mui/icons-material/Album';
+import Block from '@mui/icons-material/Block';
 import CameraRoll from '@mui/icons-material/CameraRoll';
 import Category from '@mui/icons-material/Category';
 import ChildCare from '@mui/icons-material/ChildCare';
@@ -9,6 +10,7 @@ import FourK from '@mui/icons-material/FourK';
 import Groups from '@mui/icons-material/Groups';
 import Hd from '@mui/icons-material/Hd';
 import HelpOutline from '@mui/icons-material/HelpOutline';
+import HourglassEmpty from '@mui/icons-material/HourglassEmpty';
 import Radio from '@mui/icons-material/Radio';
 import Slideshow from '@mui/icons-material/Slideshow';
 import Theaters from '@mui/icons-material/Theaters';
@@ -120,22 +122,26 @@ export const RATING_LEVELS = {
     teen: { Icon: Groups, iconColor: '#EECE55' },
     mature: { Icon: Warning, iconColor: '#F08A5D' },
     adult: { Icon: Explicit, iconColor: '#E0533D' },
-    unrated: { Icon: HelpOutline, iconColor: '#9AA5B1' }
+    specialAdult: { Icon: Block, iconColor: '#B71C1C' },
+    unrated: { Icon: HelpOutline, iconColor: '#9AA5B1' },
+    pending: { Icon: HourglassEmpty, iconColor: '#9AA5B1' }
 } as const satisfies Record<string, PickTileStyle>;
 
 export type RatingLevel = keyof typeof RATING_LEVELS;
 
 /** Display order for grouped rating tiles, most restrictive first. */
-export const RATING_LEVEL_ORDER: readonly RatingLevel[] = ['adult', 'mature', 'teen', 'guidance', 'everyone', 'unrated'];
+export const RATING_LEVEL_ORDER: readonly RatingLevel[] = ['specialAdult', 'adult', 'mature', 'teen', 'guidance', 'everyone', 'pending', 'unrated'];
 
-/** Canonical label shown for each grouped rating level. */
+/** Canonical label plus the recommended minimum age shown on each grouped rating tile. */
 export const RATING_LEVEL_LABEL: Record<RatingLevel, string> = {
-    everyone: 'G',
-    guidance: 'PG',
-    teen: 'PG-13',
-    mature: 'MA',
-    adult: 'R',
-    unrated: 'Unrated'
+    everyone: 'G · All ages',
+    guidance: 'PG · 6+',
+    teen: 'PG-13 · 13+',
+    mature: 'MA · 15+',
+    adult: 'R · 18+',
+    specialAdult: 'X · 18+',
+    unrated: 'Unrated',
+    pending: 'Pending'
 };
 
 /**
@@ -145,24 +151,46 @@ export const RATING_LEVEL_LABEL: Record<RatingLevel, string> = {
  * start with, otherwise `R18+` would be read as `R` and `PG-13` as `PG`.
  */
 const RATING_TOKENS: ReadonlyArray<readonly [string, RatingLevel]> = [
+    // Special adult — prohibited / adult-entertainment / objectionable.
+    ['OBJECTIONABLE', 'specialAdult'],
+    ['X18+', 'specialAdult'],
+    ['AO', 'specialAdult'],
+    ['RC', 'specialAdult'],
+    ['X', 'specialAdult'],
+    // Adult (18+) — longer R-prefixed codes before the bare "R".
     ['NC-17', 'adult'],
+    ['R21', 'adult'],
     ['R18+', 'adult'],
-    ['X18+', 'adult'],
-    ['TV-MA', 'adult'],
-    ['MA15+', 'mature'],
-    ['PG-13', 'teen'],
-    ['TV-14', 'teen'],
-    ['TV-PG', 'guidance'],
-    ['TV-Y7', 'guidance'],
-    ['TV-Y', 'everyone'],
-    ['TV-G', 'everyone'],
-    ['AO', 'adult'],
-    ['MA', 'mature'],
-    ['PG', 'guidance'],
+    ['R18', 'adult'],
+    ['RP16', 'mature'],
+    ['RP13', 'teen'],
+    ['R16', 'mature'],
+    ['R15', 'mature'],
+    ['R13', 'teen'],
     ['R', 'adult'],
-    ['X', 'adult'],
+    // Mature (15+) — longer M-prefixed codes before the bare "M".
+    ['MA15+', 'mature'],
+    ['M18', 'mature'],
+    ['MA', 'mature'],
+    ['NC16', 'mature'],
+    ['18A', 'mature'],
+    ['14A', 'mature'],
+    ['TV-MA', 'mature'],
+    // Teen (13+).
+    ['PG-13', 'teen'],
+    ['PG13', 'teen'],
+    ['12A', 'teen'],
+    ['TV-14', 'teen'],
     ['M', 'teen'],
     ['T', 'teen'],
+    // Guidance (6+).
+    ['TV-Y7-FV', 'guidance'],
+    ['TV-Y7', 'guidance'],
+    ['TV-PG', 'guidance'],
+    ['PG', 'guidance'],
+    // Everyone.
+    ['TV-G', 'everyone'],
+    ['TV-Y', 'everyone'],
     ['G', 'everyone'],
     ['U', 'everyone'],
     ['E', 'everyone']
@@ -196,6 +224,10 @@ export const getRatingLevel = (rating: string): RatingLevel => {
 
     if (!normalized || /^(NR|UR|UNRATED|NOT RATED|NONE)$/.test(normalized)) {
         return 'unrated';
+    }
+
+    if (/^(CTC|TBA|TO BE CLASSIFIED|CHECK THE CLASSIFICATION)$/.test(normalized) || normalized.includes('CLASSIFICATION')) {
+        return 'pending';
     }
 
     const token = RATING_TOKENS.find(([code]) => normalized.startsWith(code));
