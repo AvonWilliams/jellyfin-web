@@ -3,10 +3,7 @@ import { CollectionType } from '@jellyfin/sdk/lib/generated-client/models/collec
 import type { PersonKind } from '@jellyfin/sdk/lib/generated-client/models/person-kind';
 import Box from '@mui/material/Box';
 import ButtonBase from '@mui/material/ButtonBase';
-import FormControl from '@mui/material/FormControl';
 import IconButton from '@mui/material/IconButton';
-import MenuItem from '@mui/material/MenuItem';
-import Select, { type SelectChangeEvent } from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
@@ -29,7 +26,7 @@ import { useGetPersons, useGetQueryFiltersLegacy, useGetStudios } from 'hooks/us
 import { useApi } from 'hooks/useApi';
 import { useItem } from 'hooks/useItem';
 import globalize from 'lib/globalize';
-import type { BrowseModeDefinition } from 'types/browseMode';
+import { BrowseMode, type BrowseModeDefinition } from 'types/browseMode';
 
 const DECADE_LENGTH = 10;
 
@@ -64,12 +61,12 @@ const BACKDROP_BASE_SX = {
     objectPosition: 'center'
 } as const;
 
-/** Frosted (blurred) overlay of the same image, fading out toward the bottom. */
+/** Frosted (blurred) overlay of the same image, clearest at the centre and frosting toward the edges. */
 const BACKDROP_FROST_SX = {
     ...BACKDROP_BASE_SX,
     filter: 'blur(20px) saturate(130%)',
-    WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 40%, transparent 95%)',
-    maskImage: 'linear-gradient(to bottom, black 0%, black 40%, transparent 95%)'
+    WebkitMaskImage: 'radial-gradient(ellipse at center, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.2) 32%, black 82%)',
+    maskImage: 'radial-gradient(ellipse at center, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.2) 32%, black 82%)'
 } as const;
 
 /** Light scrim that fades toward the bottom, keeping the frosted zone dim enough for tiles. */
@@ -118,6 +115,81 @@ const buildStudioOptions = (
         .sort((a, b) => (a.Name ?? '').localeCompare(b.Name ?? ''))
         .map(studio => ({ label: studio.Name ?? '', value: studio.Id ?? '' }));
     return buildNamedOptions(activePicker, entries);
+};
+
+/** Sort pills offered on every picker: alphabetical or by item count. 'random' is the shuffle button only. */
+const SORT_PILLS: ReadonlyArray<{ value: 'az' | 'za' | 'most' | 'fewest'; label: string }> = [
+    { value: 'az', label: 'A — Z' },
+    { value: 'za', label: 'Z — A' },
+    { value: 'most', label: 'Most items' },
+    { value: 'fewest', label: 'Fewest items' }
+];
+
+/** Applies the picker sort to a list of tiles; 'default' keeps each picker's natural order. */
+const sortPickerOptions = <T extends { label: string; value: string }>(
+    options: T[],
+    sort: string,
+    counts: Record<string, number>
+): T[] => {
+    if (sort === 'az') {
+        return [...options].sort((a, b) => a.label.localeCompare(b.label));
+    }
+    if (sort === 'za') {
+        return [...options].sort((a, b) => b.label.localeCompare(a.label));
+    }
+    if (sort === 'most') {
+        return [...options].sort((a, b) => (counts[b.value] ?? counts[b.label] ?? 0) - (counts[a.value] ?? counts[a.label] ?? 0));
+    }
+    if (sort === 'fewest') {
+        return [...options].sort((a, b) => (counts[a.value] ?? counts[a.label] ?? 0) - (counts[b.value] ?? counts[b.label] ?? 0));
+    }
+    if (sort === 'random') {
+        const shuffled = [...options];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return shuffled;
+    }
+    return options;
+};
+
+/** The query-filters fields the child-tile counts read from. */
+type BrowseFilters = {
+    Genres?: string[] | null;
+    Years?: number[] | null;
+    OfficialRatings?: string[] | null;
+    Tags?: string[] | null;
+};
+
+/** Number of entries under a meta child (genres, studios, decades, years, ratings, tags). */
+const childEntryCount = (
+    definition: BrowseModeDefinition,
+    filters: BrowseFilters | undefined,
+    studios: Array<{ Name?: string | null }> | undefined
+): number => {
+    switch (definition.mode) {
+        case BrowseMode.Genres:
+            return filters?.Genres?.length ?? 0;
+        case BrowseMode.Studios:
+            return studios?.length ?? 0;
+        case BrowseMode.Decades:
+            return new Set((filters?.Years ?? []).map(year => Math.floor(year / DECADE_LENGTH) * DECADE_LENGTH)).size;
+        case BrowseMode.Year:
+            return new Set(filters?.Years ?? []).size;
+        case BrowseMode.AgeRating:
+            return filters?.OfficialRatings?.length ?? 0;
+        case BrowseMode.Mood:
+        case BrowseMode.StoryThemes:
+        case BrowseMode.PlotElements:
+        case BrowseMode.Worlds:
+        case BrowseMode.Styles: {
+            const curated = new Set((definition.picker?.tagList ?? []).map(tag => tag.toLowerCase()));
+            return (filters?.Tags ?? []).filter(tag => curated.has(tag.toLowerCase())).length;
+        }
+        default:
+            return 0;
+    }
 };
 
 /** Item kinds whose production years decide which decades are worth offering. */
@@ -194,7 +266,8 @@ const BrowseModeTile: FC<{
     iconSize?: string;
     labelSize?: string;
     primary?: boolean;
-}> = ({ definition, onSelect, iconSize, labelSize, primary }) => {
+    count?: number;
+}> = ({ definition, onSelect, iconSize, labelSize, primary, count }) => {
     const onClick = useCallback(() => onSelect(definition), [onSelect, definition]);
 
     return (
@@ -205,6 +278,7 @@ const BrowseModeTile: FC<{
             iconSize={iconSize}
             labelSize={labelSize}
             primary={primary}
+            count={count}
             onClick={onClick}
         />
     );
@@ -257,7 +331,8 @@ const InlineModeLinks: FC<{
     definition: BrowseModeDefinition;
     children: BrowseModeDefinition[];
     onSelect: (definition: BrowseModeDefinition) => void;
-}> = ({ definition, children, onSelect }) => (
+    getCount?: (definition: BrowseModeDefinition) => number;
+}> = ({ definition, children, onSelect, getCount }) => (
     <Stack spacing={1}>
         <Typography variant='h3' sx={GROUP_LABEL_SX}>
             {globalize.translate(definition.label)}
@@ -268,6 +343,7 @@ const InlineModeLinks: FC<{
                     key={child.mode}
                     definition={child}
                     onSelect={onSelect}
+                    count={getCount ? getCount(child) || undefined : undefined}
                 />
             ))}
         </TileGrid>
@@ -321,14 +397,12 @@ const Browse: FC = () => {
         () => (localStorage.getItem('browsePickerView') as 'grid' | 'ribbons') ?? 'grid'
     );
 
-    // Tag sort order for tag-based pickers.
-    type TagSort = 'random' | 'az' | 'za' | 'most' | 'fewest';
-    const [tagSort, setTagSort] = useState<TagSort>(
-        () => (localStorage.getItem('browseTagSort') as TagSort) ?? 'random'
+    // Sort order for picker tiles (genres, studios, decades, ratings, tags). 'random' is set only
+    // by the shuffle button, not offered as a pill.
+    type PickerSort = 'default' | 'random' | 'az' | 'za' | 'most' | 'fewest';
+    const [pickerSort, setPickerSort] = useState<PickerSort>(
+        () => (localStorage.getItem('browsePickerSort') as PickerSort) ?? 'default'
     );
-
-    // Per-tag item counts (fetched lazily when sorting by count).
-    const [tagCounts, setTagCounts] = useState<Record<string, number>>({});
     const { __legacyApiClient__, api } = useApi();
 
     // Picker value counts from the plugin's /Discover/Counts endpoint, shown as tile badges.
@@ -368,16 +442,23 @@ const Browse: FC = () => {
     }, [__legacyApiClient__, library]);
 
     // The administrator's tile order and visibility, fetched from the plugin. An empty or
-    // missing layout falls back to the built-in order with every mode shown.
+    // missing layout falls back to the built-in order with every mode shown. Until the fetch
+    // settles we render nothing, so the full built-in grid never flashes before the admin's
+    // reduced/reordered layout arrives.
     const [tileLayout, setTileLayout] = useState<string[]>();
+    const [tileLayoutLoaded, setTileLayoutLoaded] = useState(false);
     useEffect(() => {
-        if (!api) return;
+        if (!api) {
+            setTileLayoutLoaded(true);
+            return;
+        }
         api.axiosInstance
             .get<string[]>(`${api.basePath}/Discover/TileLayout`, {
                 headers: { Authorization: api.authorizationHeader }
             })
             .then(({ data }) => setTileLayout(data))
-            .catch(() => setTileLayout(undefined));
+            .catch(() => setTileLayout(undefined))
+            .finally(() => setTileLayoutLoaded(true));
     }, [api]);
 
     const browseModes = useMemo(
@@ -410,51 +491,6 @@ const Browse: FC = () => {
     const itemKind = collectionType ? ITEM_KIND_BY_COLLECTION_TYPE[collectionType] : undefined;
     const { data: filters } = useGetQueryFiltersLegacy(libraryId, itemKind ? [itemKind] : []);
     const { data: studios } = useGetStudios(libraryId, itemKind ? [itemKind] : []);
-
-    // Fetch per-tag item counts when sorting by count.
-    useEffect(() => {
-        if ((tagSort !== 'most' && tagSort !== 'fewest') || activePicker?.picker?.filter !== 'Tags' || !libraryId) {
-            return;
-        }
-
-        const curated = new Set(activePicker?.picker?.tagList?.map(t => t.toLowerCase()) ?? []);
-        const available = (filters?.Tags ?? []).filter(tag => curated.has(tag.toLowerCase()));
-        if (!available.length) return;
-
-        const BATCH = 8;
-        let cancelled = false;
-        const counts: Record<string, number> = {};
-
-        const fetchBatch = async (start: number) => {
-            const batch = available.slice(start, start + BATCH);
-            const results = await Promise.allSettled(
-                batch.map(tag => {
-                    const url = __legacyApiClient__?.getUrl('Items', {
-                        Tags: tag,
-                        Limit: 0,
-                        Recursive: true,
-                        ParentId: libraryId,
-                        IncludeItemTypes: itemKind ?? undefined
-                    });
-                    return url ? __legacyApiClient__?.getJSON(url) : Promise.resolve(null);
-                })
-            );
-            results.forEach((r, i) => {
-                if (r.status === 'fulfilled' && r.value?.TotalRecordCount !== undefined) {
-                    counts[batch[i]] = r.value.TotalRecordCount;
-                }
-            });
-            if (!cancelled && start + BATCH < available.length) {
-                await fetchBatch(start + BATCH);
-            }
-        };
-
-        fetchBatch(0).then(() => {
-            if (!cancelled) setTagCounts(counts);
-        });
-
-        return () => { cancelled = true; };
-    }, [tagSort, activePicker?.picker?.filter, activePicker?.picker?.tagList, filters?.Tags, libraryId, itemKind, __legacyApiClient__]);
 
     // Fetch picker value counts from the plugin (cached in memory), shown as tile badges.
     useEffect(() => {
@@ -493,93 +529,68 @@ const Browse: FC = () => {
     // Incrementing counter forces a fresh random shuffle each click.
     const [shuffleKey, setShuffleKey] = useState(0);
     const handleShuffle = useCallback(() => {
-        if (tagSort !== 'random') {
-            setTagSort('random');
-            localStorage.setItem('browseTagSort', 'random');
+        if (pickerSort !== 'random') {
+            setPickerSort('random');
+            localStorage.setItem('browsePickerSort', 'random');
         }
         setShuffleKey(k => k + 1);
-    }, [tagSort]);
+    }, [pickerSort]);
 
     // Only offer values the library actually has something under. A decade is expanded into the
-    // ten years it covers, since that is what the items are actually tagged with.
+    // ten years it covers, since that is what the items are actually tagged with. The active sort
+    // pill reorders the result ('default' = each picker's natural order).
     const pickOptions = useMemo(() => {
-        if (activePicker?.picker?.filter === 'Years') {
-            const years = filters?.Years;
-            if (!years?.length) {
-                return [];
-            }
-
-            if (activePicker.picker.individualYears) {
-                return [...new Set(years)]
-                    .sort((a, b) => b - a)
-                    .map(year => ({
-                        label: String(year),
-                        value: String(year),
-                        Icon: activePicker.Icon,
-                        iconColor: activePicker.iconColor
-                    }));
-            }
-
-            const startYears = [...new Set(years.map(year => Math.floor(year / DECADE_LENGTH) * DECADE_LENGTH))];
-            startYears.sort((a, b) => b - a);
-
-            return startYears.map(startYear => ({
-                label: `${startYear}s`,
-                value: Array.from({ length: DECADE_LENGTH }, (_, offset) => startYear + offset).join(','),
-                ...getDecadeStyle(startYear)
-            }));
+        if (!activePicker) {
+            return [];
         }
 
-        if (activePicker?.picker?.filter === 'OfficialRatings') {
-            return (filters?.OfficialRatings ?? [])
+        let options: Array<{ label: string; value: string; Icon?: BrowseModeDefinition['Icon']; iconColor?: string }> = [];
+
+        if (activePicker.picker?.filter === 'Years') {
+            const years = filters?.Years;
+            if (years?.length) {
+                if (activePicker.picker.individualYears) {
+                    options = [...new Set(years)]
+                        .sort((a, b) => b - a)
+                        .map(year => ({
+                            label: String(year),
+                            value: String(year),
+                            Icon: activePicker.Icon,
+                            iconColor: activePicker.iconColor
+                        }));
+                } else {
+                    const startYears = [...new Set(years.map(year => Math.floor(year / DECADE_LENGTH) * DECADE_LENGTH))];
+                    startYears.sort((a, b) => b - a);
+                    options = startYears.map(startYear => ({
+                        label: `${startYear}s`,
+                        value: Array.from({ length: DECADE_LENGTH }, (_, offset) => startYear + offset).join(','),
+                        ...getDecadeStyle(startYear)
+                    }));
+                }
+            }
+        } else if (activePicker.picker?.filter === 'OfficialRatings') {
+            options = (filters?.OfficialRatings ?? [])
                 .slice()
                 .sort((a, b) => a.localeCompare(b))
                 .map(rating => ({ label: rating, value: rating, ...getRatingStyle(rating) }));
-        }
-
-        if (activePicker?.picker?.filter === 'Genres') {
-            return buildGenreOptions(filters?.Genres);
-        }
-
-        if (activePicker?.picker?.filter === 'Studios') {
-            return buildStudioOptions(studios, activePicker);
-        }
-
-        if (activePicker?.picker?.filter === 'Tags' && activePicker.picker.tagList) {
+        } else if (activePicker.picker?.filter === 'Genres') {
+            options = buildGenreOptions(filters?.Genres);
+        } else if (activePicker.picker?.filter === 'Studios') {
+            options = buildStudioOptions(studios, activePicker);
+        } else if (activePicker.picker?.filter === 'Tags' && activePicker.picker.tagList) {
             const curated = new Set(activePicker.picker.tagList.map(t => t.toLowerCase()));
-            const available = (filters?.Tags ?? [])
-                .filter(tag => curated.has(tag.toLowerCase()));
-
-            let sorted = available;
-
-            if (tagSort === 'az') {
-                sorted = [...available].sort((a, b) => a.localeCompare(b));
-            } else if (tagSort === 'za') {
-                sorted = [...available].sort((a, b) => b.localeCompare(a));
-            } else if (tagSort === 'most') {
-                sorted = [...available].sort((a, b) => (tagCounts[b] ?? 0) - (tagCounts[a] ?? 0));
-            } else if (tagSort === 'fewest') {
-                sorted = [...available].sort((a, b) => (tagCounts[a] ?? 0) - (tagCounts[b] ?? 0));
-            } else {
-                // 'random' — stable shuffle within this picker session.
-                const shuffled = [...available];
-                for (let i = shuffled.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-                }
-                sorted = shuffled;
-            }
-
-            return sorted.map(tag => ({
-                label: toTitleCase(tag),
-                value: tag,
-                Icon: activePicker.Icon,
-                iconColor: activePicker.iconColor
-            }));
+            options = (filters?.Tags ?? [])
+                .filter(tag => curated.has(tag.toLowerCase()))
+                .map(tag => ({
+                    label: toTitleCase(tag),
+                    value: tag,
+                    Icon: activePicker.Icon,
+                    iconColor: activePicker.iconColor
+                }));
         }
 
-        return [];
-    }, [activePicker, filters?.Years, filters?.OfficialRatings, filters?.Genres, studios, filters?.Tags, tagSort, tagCounts, shuffleKey]);
+        return sortPickerOptions(options, pickerSort, pickerCounts);
+    }, [activePicker, filters?.Years, filters?.OfficialRatings, filters?.Genres, studios, filters?.Tags, pickerSort, pickerCounts, shuffleKey]);
 
     // Grow the visible slice when the sentinel scrolls into view.
     useEffect(() => {
@@ -672,10 +683,9 @@ const Browse: FC = () => {
         });
     }, []);
 
-    const handleSortChange = useCallback((e: SelectChangeEvent<string>) => {
-        const value = e.target.value as TagSort;
-        setTagSort(value);
-        localStorage.setItem('browseTagSort', value);
+    const handleSortChange = useCallback((value: PickerSort) => {
+        setPickerSort(value);
+        localStorage.setItem('browsePickerSort', value);
     }, []);
 
     const handleBackFromPicker = useCallback(() => setActivePicker(null), []);
@@ -715,33 +725,45 @@ const Browse: FC = () => {
                         <Typography variant='h2' sx={{ flexGrow: 1 }}>
                             {globalize.translate(activePicker.label)}
                         </Typography>
-                        {isTagPicker && (
-                            <>
+                        <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+                            {isTagPicker && (
                                 <Tooltip title='Shuffle tags'>
                                     <IconButton onClick={handleShuffle} size='small'>
                                         <Shuffle fontSize='small' />
                                     </IconButton>
                                 </Tooltip>
-                                <FormControl size='small' sx={{ minWidth: 130 }}>
-                                    <Select
-                                        value={tagSort}
-                                        onChange={handleSortChange}
-                                        inputProps={{ 'aria-label': 'Sort order' }}
+                            )}
+                            {SORT_PILLS.map(pill => (
+                                <ButtonBase
+                                    key={pill.value}
+                                    onClick={() => handleSortChange(pill.value)}
+                                    aria-pressed={pickerSort === pill.value}
+                                    sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        padding: '4px 14px',
+                                        borderRadius: '999px',
+                                        border: `1px solid ${pickerSort === pill.value ? 'var(--jf-palette-text-primary, rgba(255, 255, 255, 0.9))' : 'var(--jf-palette-divider, rgba(255, 255, 255, 0.12))'}`,
+                                        backgroundColor: pickerSort === pill.value ? 'rgba(var(--jf-palette-background-paperChannel, 32 32 32) / 0.5)' : 'transparent',
+                                        transition: 'background-color 120ms ease, border-color 120ms ease'
+                                    }}
+                                >
+                                    <Typography
+                                        variant='caption'
+                                        sx={{ color: pickerSort === pill.value ? 'text.primary' : 'text.secondary', fontWeight: pickerSort === pill.value ? 600 : 400, lineHeight: 1, fontSize: '0.875rem' }}
                                     >
-                                        <MenuItem value='random'>Random</MenuItem>
-                                        <MenuItem value='az'>A — Z</MenuItem>
-                                        <MenuItem value='za'>Z — A</MenuItem>
-                                        <MenuItem value='most'>Most items</MenuItem>
-                                        <MenuItem value='fewest'>Fewest items</MenuItem>
-                                    </Select>
-                                </FormControl>
+                                        {pill.label}
+                                    </Typography>
+                                </ButtonBase>
+                            ))}
+                            {isTagPicker && (
                                 <Tooltip title={pickerView === 'ribbons' ? 'Switch to grid' : 'Switch to shelves'}>
                                     <IconButton onClick={togglePickerView} size='small'>
                                         {pickerView === 'ribbons' ? <ViewModule fontSize='small' /> : <ViewStream fontSize='small' />}
                                     </IconButton>
                                 </Tooltip>
-                            </>
-                        )}
+                            )}
+                        </Box>
                     </Stack>
 
                     {isTagPicker && pickerView === 'ribbons' ? (
@@ -801,6 +823,7 @@ const Browse: FC = () => {
                                 key={definition.mode}
                                 definition={definition}
                                 onSelect={onModeClick}
+                                count={childEntryCount(definition, filters, studios) || undefined}
                             />
                         ))}
                     </TileGrid>
@@ -848,6 +871,7 @@ const Browse: FC = () => {
                             .map(child => getBrowseMode(collectionType, child))
                             .filter((child): child is BrowseModeDefinition => Boolean(child))}
                         onSelect={openLeaf}
+                        getCount={child => childEntryCount(child, filters, studios)}
                     />
                 );
             } else {
@@ -899,7 +923,7 @@ const Browse: FC = () => {
 
             <Box className='padded-left padded-right padded-top padded-bottom-page' sx={{ position: 'relative', zIndex: 1 }}>
                 {isHomeView ? (
-                    renderHome()
+                    tileLayoutLoaded ? renderHome() : null
                 ) : (
                     <Stack spacing={3}>
                         {renderBrowseContent()}

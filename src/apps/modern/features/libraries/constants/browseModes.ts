@@ -30,6 +30,7 @@ import { BrowseMode, type BrowseModeDefinition } from 'types/browseMode';
 import { LibraryTab } from 'types/libraryTab';
 
 import { MOOD_TAGS, PLOT_ELEMENT_TAGS, STORY_THEME_TAGS, STYLE_TAGS, WORLD_TAGS } from './browseTags';
+import YearIcon from './yearIcon';
 
 const monthsAgo = (n: number) => {
     const d = new Date();
@@ -104,8 +105,8 @@ const decadesMode: BrowseModeDefinition = {
 const yearMode: BrowseModeDefinition = {
     mode: BrowseMode.Year,
     label: 'BrowseModeYear',
-    Icon: CalendarMonth,
-    iconColor: '#7E9CD8',
+    Icon: YearIcon,
+    iconColor: '#E8A33D',
     tier: 'meta',
     picker: { filter: 'Years', individualYears: true }
 };
@@ -247,7 +248,7 @@ export const byCategoriesMode: BrowseModeDefinition = {
     Icon: Category,
     iconColor: '#B0BEC5',
     tier: 'meta',
-    children: [BrowseMode.Genres, BrowseMode.Studios, BrowseMode.Decades, BrowseMode.Year],
+    children: [BrowseMode.Genres, BrowseMode.Studios, BrowseMode.Decades, BrowseMode.Year, BrowseMode.AgeRating],
     inline: true
 };
 
@@ -306,7 +307,7 @@ export const byQualityMode: BrowseModeDefinition = {
     Icon: Reviews,
     iconColor: '#E0533D',
     tier: 'meta',
-    children: [BrowseMode.CriticsPicks, BrowseMode.HiddenGems, BrowseMode.AgeRating, BrowseMode.WatchAgain],
+    children: [BrowseMode.CriticsPicks, BrowseMode.HiddenGems, BrowseMode.WatchAgain],
     inline: true
 };
 
@@ -314,7 +315,7 @@ export const byQualityMode: BrowseModeDefinition = {
 // secondary drops that child.
 const byQualityTvMode: BrowseModeDefinition = {
     ...byQualityMode,
-    children: [BrowseMode.HiddenGems, BrowseMode.AgeRating, BrowseMode.WatchAgain]
+    children: [BrowseMode.HiddenGems, BrowseMode.WatchAgain]
 };
 
 // The home grid, in display order: six primary quick-access tiles first, then the "Browse by…"
