@@ -3,34 +3,12 @@ import { ItemFilter } from '@jellyfin/sdk/lib/generated-client/models/item-filte
 import { ItemSortBy } from '@jellyfin/sdk/lib/generated-client/models/item-sort-by';
 import { PersonKind } from '@jellyfin/sdk/lib/generated-client/models/person-kind';
 import { SortOrder } from '@jellyfin/sdk/lib/generated-client/models/sort-order';
-import Apps from '@mui/icons-material/Apps';
-import Business from '@mui/icons-material/Business';
-import CalendarMonth from '@mui/icons-material/CalendarMonth';
-import Category from '@mui/icons-material/Category';
-import Edit from '@mui/icons-material/Edit';
-import FiberNew from '@mui/icons-material/FiberNew';
-import FamilyRestroom from '@mui/icons-material/FamilyRestroom';
-import Group from '@mui/icons-material/Group';
-import History from '@mui/icons-material/History';
-import Movie from '@mui/icons-material/Movie';
-import NewReleases from '@mui/icons-material/NewReleases';
-import Person from '@mui/icons-material/Person';
-import Shuffle from '@mui/icons-material/Shuffle';
-import MilitaryTech from '@mui/icons-material/MilitaryTech';
-import Reviews from '@mui/icons-material/Reviews';
-import Recommend from '@mui/icons-material/Recommend';
-import AutoStories from '@mui/icons-material/AutoStories';
-import Mood from '@mui/icons-material/Mood';
-import Palette from '@mui/icons-material/Palette';
-import Public from '@mui/icons-material/Public';
-import Timeline from '@mui/icons-material/Timeline';
-import TrendingUp from '@mui/icons-material/TrendingUp';
 
 import { BrowseMode, type BrowseModeDefinition } from 'types/browseMode';
 import { LibraryTab } from 'types/libraryTab';
 
+import { BROWSE_ICONS } from './browseIcons';
 import { MOOD_TAGS, PLOT_ELEMENT_TAGS, STORY_THEME_TAGS, STYLE_TAGS, WORLD_TAGS } from './browseTags';
-import YearIcon from './yearIcon';
 
 const monthsAgo = (n: number) => {
     const d = new Date();
@@ -41,16 +19,14 @@ const monthsAgo = (n: number) => {
 const allMode: BrowseModeDefinition = {
     mode: BrowseMode.All,
     label: 'BrowseModeAll',
-    Icon: Apps,
-    iconColor: '#B0BEC5',
+    iconSrc: BROWSE_ICONS.all,
     tier: 'primary'
 };
 
 const genresMode: BrowseModeDefinition = {
     mode: BrowseMode.Genres,
     label: 'Genres',
-    Icon: Category,
-    iconColor: '#C07CD6',
+    iconSrc: BROWSE_ICONS.genres,
     tier: 'meta',
     picker: { filter: 'Genres' }
 };
@@ -58,8 +34,7 @@ const genresMode: BrowseModeDefinition = {
 const justAddedMode: BrowseModeDefinition = {
     mode: BrowseMode.JustAdded,
     label: 'BrowseModeJustAdded',
-    Icon: FiberNew,
-    iconColor: '#4DD0C4',
+    iconSrc: BROWSE_ICONS['just-added'],
     tier: 'primary',
     settings: {
         SortBy: [ItemSortBy.DateCreated],
@@ -71,8 +46,7 @@ const justAddedMode: BrowseModeDefinition = {
 const newReleasesMode: BrowseModeDefinition = {
     mode: BrowseMode.NewReleases,
     label: 'BrowseModeNewReleases',
-    Icon: NewReleases,
-    iconColor: '#6FB3E0',
+    iconSrc: BROWSE_ICONS['new-releases'],
     tier: 'primary',
     settings: {
         SortBy: [ItemSortBy.PremiereDate],
@@ -84,8 +58,7 @@ const newReleasesMode: BrowseModeDefinition = {
 const randomMode: BrowseModeDefinition = {
     mode: BrowseMode.Random,
     label: 'OptionRandom',
-    Icon: Shuffle,
-    iconColor: '#F08A5D',
+    iconSrc: BROWSE_ICONS.random,
     tier: 'primary',
     settings: {
         SortBy: [ItemSortBy.Random],
@@ -96,8 +69,7 @@ const randomMode: BrowseModeDefinition = {
 const decadesMode: BrowseModeDefinition = {
     mode: BrowseMode.Decades,
     label: 'BrowseModeDecades',
-    Icon: CalendarMonth,
-    iconColor: '#4FB3A0',
+    iconSrc: BROWSE_ICONS.decades,
     tier: 'meta',
     picker: { filter: 'Years' }
 };
@@ -105,8 +77,7 @@ const decadesMode: BrowseModeDefinition = {
 const yearMode: BrowseModeDefinition = {
     mode: BrowseMode.Year,
     label: 'BrowseModeYear',
-    Icon: YearIcon,
-    iconColor: '#E8A33D',
+    iconSrc: BROWSE_ICONS.year,
     tier: 'meta',
     picker: { filter: 'Years', individualYears: true }
 };
@@ -114,8 +85,7 @@ const yearMode: BrowseModeDefinition = {
 const trendingMode: BrowseModeDefinition = {
     mode: BrowseMode.Trending,
     label: 'BrowseModeTrending',
-    Icon: TrendingUp,
-    iconColor: '#5CD672',
+    iconSrc: BROWSE_ICONS.trending,
     tier: 'primary',
     view: LibraryTab.Trending,
     source: 'tmdb'
@@ -124,8 +94,7 @@ const trendingMode: BrowseModeDefinition = {
 const studiosMode: BrowseModeDefinition = {
     mode: BrowseMode.Studios,
     label: 'Studios',
-    Icon: Business,
-    iconColor: '#8D9EC6',
+    iconSrc: BROWSE_ICONS.studios,
     tier: 'meta',
     picker: { filter: 'Studios' }
 };
@@ -133,14 +102,13 @@ const studiosMode: BrowseModeDefinition = {
 const networksMode: BrowseModeDefinition = {
     ...studiosMode,
     label: 'TabNetworks',
-    iconColor: '#5AC8E0'
+    iconSrc: BROWSE_ICONS.networks
 };
 
 const criticsPicksMode: BrowseModeDefinition = {
     mode: BrowseMode.CriticsPicks,
     label: 'BrowseModeCriticsPicks',
-    Icon: Reviews,
-    iconColor: '#E0533D',
+    iconSrc: BROWSE_ICONS['critics-picks'],
     tier: 'meta',
     settings: {
         SortBy: [ItemSortBy.CriticRating],
@@ -151,8 +119,7 @@ const criticsPicksMode: BrowseModeDefinition = {
 const watchAgainMode: BrowseModeDefinition = {
     mode: BrowseMode.WatchAgain,
     label: 'BrowseModeWatchAgain',
-    Icon: History,
-    iconColor: '#86C98B',
+    iconSrc: BROWSE_ICONS['watch-again'],
     tier: 'meta',
     settings: {
         SortBy: [ItemSortBy.DatePlayed],
@@ -163,8 +130,7 @@ const watchAgainMode: BrowseModeDefinition = {
 const ageRatingMode: BrowseModeDefinition = {
     mode: BrowseMode.AgeRating,
     label: 'BrowseModeAgeRating',
-    Icon: FamilyRestroom,
-    iconColor: '#9CCC65',
+    iconSrc: BROWSE_ICONS['age-rating'],
     tier: 'meta',
     picker: { filter: 'OfficialRatings' }
 };
@@ -172,8 +138,7 @@ const ageRatingMode: BrowseModeDefinition = {
 const topRatedMode: BrowseModeDefinition = {
     mode: BrowseMode.TopRated,
     label: 'BrowseModeTopRated',
-    Icon: MilitaryTech,
-    iconColor: '#EECE55',
+    iconSrc: BROWSE_ICONS['top-rated'],
     tier: 'primary',
     view: LibraryTab.TopRated,
     source: 'tmdb'
@@ -182,8 +147,7 @@ const topRatedMode: BrowseModeDefinition = {
 const moodMode: BrowseModeDefinition = {
     mode: BrowseMode.Mood,
     label: 'BrowseModeMood',
-    Icon: Mood,
-    iconColor: '#EC407A',
+    iconSrc: BROWSE_ICONS.mood,
     tier: 'meta',
     picker: { filter: 'Tags', tagList: MOOD_TAGS }
 };
@@ -191,8 +155,7 @@ const moodMode: BrowseModeDefinition = {
 const storyThemesMode: BrowseModeDefinition = {
     mode: BrowseMode.StoryThemes,
     label: 'BrowseModeStoryThemes',
-    Icon: AutoStories,
-    iconColor: '#FF7043',
+    iconSrc: BROWSE_ICONS['story-themes'],
     tier: 'meta',
     picker: { filter: 'Tags', tagList: STORY_THEME_TAGS }
 };
@@ -200,8 +163,7 @@ const storyThemesMode: BrowseModeDefinition = {
 const plotElementsMode: BrowseModeDefinition = {
     mode: BrowseMode.PlotElements,
     label: 'BrowseModePlotElements',
-    Icon: Timeline,
-    iconColor: '#26A69A',
+    iconSrc: BROWSE_ICONS['plot-elements'],
     tier: 'meta',
     picker: { filter: 'Tags', tagList: PLOT_ELEMENT_TAGS }
 };
@@ -209,8 +171,7 @@ const plotElementsMode: BrowseModeDefinition = {
 const worldsMode: BrowseModeDefinition = {
     mode: BrowseMode.Worlds,
     label: 'BrowseModeWorlds',
-    Icon: Public,
-    iconColor: '#5C6BC0',
+    iconSrc: BROWSE_ICONS.worlds,
     tier: 'meta',
     picker: { filter: 'Tags', tagList: WORLD_TAGS }
 };
@@ -218,8 +179,7 @@ const worldsMode: BrowseModeDefinition = {
 const stylesMode: BrowseModeDefinition = {
     mode: BrowseMode.Styles,
     label: 'BrowseModeStyles',
-    Icon: Palette,
-    iconColor: '#7E57C2',
+    iconSrc: BROWSE_ICONS.styles,
     tier: 'meta',
     picker: { filter: 'Tags', tagList: STYLE_TAGS }
 };
@@ -228,8 +188,7 @@ const stylesMode: BrowseModeDefinition = {
 const hiddenGemsMode: BrowseModeDefinition = {
     mode: BrowseMode.HiddenGems,
     label: 'BrowseModeHiddenGems',
-    Icon: Recommend,
-    iconColor: '#F2C14E',
+    iconSrc: BROWSE_ICONS['hidden-gems'],
     tier: 'meta',
     settings: {
         Filters: { Status: [ItemFilter.IsUnplayed] },
@@ -240,13 +199,12 @@ const hiddenGemsMode: BrowseModeDefinition = {
 
 // Meta entry points ("Browse by…" tiles). Each opens the existing underlying mode(s) listed in
 // `children`; the underlying modes' enum values and definitions stay intact for deep links and
-// settings keys. Icon colours reuse the existing palette.
+// settings keys.
 
 export const byCategoriesMode: BrowseModeDefinition = {
     mode: BrowseMode.ByCategories,
     label: 'Categories',
-    Icon: Category,
-    iconColor: '#B0BEC5',
+    iconSrc: BROWSE_ICONS.categories,
     tier: 'meta',
     children: [BrowseMode.Genres, BrowseMode.Studios, BrowseMode.Decades, BrowseMode.Year, BrowseMode.AgeRating],
     inline: true
@@ -255,8 +213,7 @@ export const byCategoriesMode: BrowseModeDefinition = {
 export const byVibeMode: BrowseModeDefinition = {
     mode: BrowseMode.ByVibe,
     label: 'Mood & Themes',
-    Icon: Palette,
-    iconColor: '#7E57C2',
+    iconSrc: BROWSE_ICONS['mood-and-themes'],
     tier: 'meta',
     children: [BrowseMode.Mood, BrowseMode.StoryThemes, BrowseMode.PlotElements, BrowseMode.Worlds, BrowseMode.Styles],
     inline: true
@@ -265,11 +222,11 @@ export const byVibeMode: BrowseModeDefinition = {
 export const byPeopleMode: BrowseModeDefinition = {
     mode: BrowseMode.ByPeople,
     label: 'People',
-    Icon: Group,
-    iconColor: '#9CCC65',
+    iconSrc: BROWSE_ICONS.people,
     tier: 'meta',
     children: [BrowseMode.Actors, BrowseMode.Directors, BrowseMode.Writers],
-    inline: true
+    inline: true,
+    compact: true
 };
 
 // People leaves, offered through the People meta tile. Each lists the library's persons of that
@@ -277,8 +234,7 @@ export const byPeopleMode: BrowseModeDefinition = {
 const actorsMode: BrowseModeDefinition = {
     mode: BrowseMode.Actors,
     label: 'BrowseModeActors',
-    Icon: Person,
-    iconColor: '#9CCC65',
+    iconSrc: BROWSE_ICONS.actors,
     tier: 'meta',
     personType: PersonKind.Actor
 };
@@ -286,8 +242,7 @@ const actorsMode: BrowseModeDefinition = {
 const directorsMode: BrowseModeDefinition = {
     mode: BrowseMode.Directors,
     label: 'BrowseModeDirectors',
-    Icon: Movie,
-    iconColor: '#4DD0C4',
+    iconSrc: BROWSE_ICONS.directors,
     tier: 'meta',
     personType: PersonKind.Director
 };
@@ -295,8 +250,7 @@ const directorsMode: BrowseModeDefinition = {
 const writersMode: BrowseModeDefinition = {
     mode: BrowseMode.Writers,
     label: 'BrowseModeWriters',
-    Icon: Edit,
-    iconColor: '#F2C14E',
+    iconSrc: BROWSE_ICONS.writers,
     tier: 'meta',
     personType: PersonKind.Writer
 };
@@ -304,11 +258,11 @@ const writersMode: BrowseModeDefinition = {
 export const byQualityMode: BrowseModeDefinition = {
     mode: BrowseMode.ByQuality,
     label: 'Discover',
-    Icon: Reviews,
-    iconColor: '#E0533D',
+    iconSrc: BROWSE_ICONS.discover,
     tier: 'meta',
     children: [BrowseMode.CriticsPicks, BrowseMode.HiddenGems, BrowseMode.WatchAgain],
-    inline: true
+    inline: true,
+    compact: true
 };
 
 // TV libraries have no Critics' Picks (series rarely carry critic ratings), so the Quality
