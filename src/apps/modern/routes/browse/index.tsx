@@ -255,6 +255,12 @@ const unit = (n: number) => `calc(var(--tile-unit, 12px) * ${n})`;
 /** Tile widths (in units) per tier: primary 15.5 : section 13 : compact 10. */
 const HOME_TILE_WIDTH: Record<TileVariant, number> = { primary: 15.5, section: 13, compact: 10 };
 
+/**
+ * From `lg` the lower tiers get wider (1.7 : 1) at the same height, so they use more of the free
+ * width. Heights are unchanged (13 / 1.5 ~ 14.7 / 1.7, 10 / 1.5 ~ 11.3 / 1.7), so the one-screen fit holds.
+ */
+const HOME_TILE_WIDTH_LG: Record<TileVariant, number> = { primary: 15.5, section: 14.7, compact: 11.3 };
+
 const HOME_TILE_BASE_SX = {
     flexDirection: 'column',
     justifyContent: 'center',
@@ -278,16 +284,16 @@ const HOME_TILE_SX: Record<TileVariant, object> = {
     },
     section: {
         ...HOME_TILE_BASE_SX,
-        width: unit(HOME_TILE_WIDTH.section),
-        aspectRatio: '1.5 / 1',
+        width: { xs: unit(HOME_TILE_WIDTH.section), lg: unit(HOME_TILE_WIDTH_LG.section) },
+        aspectRatio: { xs: '1.5 / 1', lg: '1.7 / 1' },
         gap: unit(0.6),
         padding: unit(0.7),
         borderRadius: unit(1)
     },
     compact: {
         ...HOME_TILE_BASE_SX,
-        width: unit(HOME_TILE_WIDTH.compact),
-        aspectRatio: '1.5 / 1',
+        width: { xs: unit(HOME_TILE_WIDTH.compact), lg: unit(HOME_TILE_WIDTH_LG.compact) },
+        aspectRatio: { xs: '1.5 / 1', lg: '1.7 / 1' },
         gap: unit(0.45),
         padding: unit(0.4),
         borderRadius: unit(0.8)
@@ -390,8 +396,9 @@ type TilesPerLine = { xs: number; sm?: number; lg: number };
  * intended count (6 -> 3+3, 5 -> 3+2) rather than leaving an orphan. At `lg` a single line instead
  * spans the whole width: the leftover width becomes an even column gap, never less than `gap`.
  */
-const homeRowSx = (variant: TileVariant, perLine: TilesPerLine, gap: number) => {
+const homeRowSx = (variant: TileVariant, perLine: TilesPerLine, gap: number, insetLg?: string) => {
     const tile = HOME_TILE_WIDTH[variant];
+    const tileLg = HOME_TILE_WIDTH_LG[variant];
     const fixedWidth = (count: number) => `calc(${unit(tile * count + gap * (count - 1))} + 1px)`;
     const { xs, sm = xs, lg } = perLine;
 
@@ -400,17 +407,29 @@ const homeRowSx = (variant: TileVariant, perLine: TilesPerLine, gap: number) => 
         flexWrap: 'wrap',
         justifyContent: 'center',
         maxWidth: '100%',
+        boxSizing: 'border-box',
         rowGap: unit(gap),
+        ...(insetLg ? { paddingInline: { lg: insetLg } } : null),
         width: { xs: fixedWidth(xs), sm: fixedWidth(sm), lg: '100%' },
         columnGap: {
             xs: unit(gap),
-            lg: `max(${unit(gap)}, calc((100% - ${unit(tile * lg)}) / ${lg - 1}))`
+            lg: `max(${unit(gap)}, calc((100% - ${unit(tileLg * lg)}) / ${lg - 1}))`
         }
     };
 };
 
+/**
+ * Reverse pyramid from `lg`: the five-tile section rows are the six-tile primary row minus one
+ * tile, so each outer edge is inset by half a section pitch (tile + gap), and the People /
+ * Discover row sits a further quarter pitch in. Every inset is a percentage of the page width.
+ */
+const SECTION_GAP_LG = `max(${unit(1.2)}, calc((100% - ${unit(HOME_TILE_WIDTH_LG.section * 6)}) / 5))`;
+const SECTION_PITCH_LG = `calc(${unit(HOME_TILE_WIDTH_LG.section)} + ${SECTION_GAP_LG})`;
+const SECTION_INSET_LG = `calc(${SECTION_PITCH_LG} / 2)`;
+const COMPACT_INSET_LG = `calc(${SECTION_PITCH_LG} * 0.75)`;
+
 const PRIMARY_ROW_SX = homeRowSx('primary', { xs: 2, sm: 3, lg: 6 }, 1.6);
-const SECTION_ROW_SX = homeRowSx('section', { xs: 3, lg: 5 }, 1.2);
+const SECTION_ROW_SX = homeRowSx('section', { xs: 3, lg: 5 }, 1.2, SECTION_INSET_LG);
 const COMPACT_ROW_TILES_SX = homeRowSx('compact', { xs: 3, lg: 3 }, 1);
 
 /** Vertical space the home page cannot use: the app header plus the page's top and bottom padding. */
@@ -437,16 +456,17 @@ const HOME_ROOT_SX = {
 const HOME_PADDING_X = '4.5vw';
 
 /**
- * Two groups (People | Discover) sharing one row: each fills half the page (minus a central
- * gutter) so the pair is mirror-balanced about the centre and spans the same edges as the rows
- * above. Stacks on narrow screens.
+ * Two groups (People | Discover) sharing one row: each fills half the (inset) row, minus a central
+ * gutter, so the pair is mirror-balanced about the centre. Stacks on narrow screens.
  */
 const COMPACT_ROW_SX = {
     display: 'grid',
     gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' },
-    columnGap: '10vw',
+    columnGap: '6vw',
     rowGap: unit(2.4),
-    width: '100%'
+    width: '100%',
+    boxSizing: 'border-box',
+    paddingInline: { lg: COMPACT_INSET_LG }
 } as const;
 
 /** The six primary modes: the largest tiles, 6 across, dropping to 3 then 2 on narrow widths. */
