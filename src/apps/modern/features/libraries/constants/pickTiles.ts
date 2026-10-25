@@ -1,110 +1,77 @@
-import type { SvgIconComponent } from '@mui/icons-material';
-import Album from '@mui/icons-material/Album';
-import Block from '@mui/icons-material/Block';
-import CameraRoll from '@mui/icons-material/CameraRoll';
-import Category from '@mui/icons-material/Category';
-import ChildCare from '@mui/icons-material/ChildCare';
-import Explicit from '@mui/icons-material/Explicit';
-import FamilyRestroom from '@mui/icons-material/FamilyRestroom';
-import FourK from '@mui/icons-material/FourK';
-import Groups from '@mui/icons-material/Groups';
-import Hd from '@mui/icons-material/Hd';
-import HelpOutline from '@mui/icons-material/HelpOutline';
-import HourglassEmpty from '@mui/icons-material/HourglassEmpty';
-import Radio from '@mui/icons-material/Radio';
-import Slideshow from '@mui/icons-material/Slideshow';
-import Theaters from '@mui/icons-material/Theaters';
-import Tv from '@mui/icons-material/Tv';
-import Videocam from '@mui/icons-material/Videocam';
-import Warning from '@mui/icons-material/Warning';
-import {
-    ActionGenreIcon,
-    AdventureGenreIcon,
-    AnimationGenreIcon,
-    ComedyGenreIcon,
-    CrimeGenreIcon,
-    DocumentaryGenreIcon,
-    DramaGenreIcon,
-    FamilyGenreIcon,
-    FantasyGenreIcon,
-    HistoryGenreIcon,
-    HorrorGenreIcon,
-    MusicGenreIcon,
-    MysteryGenreIcon,
-    RomanceGenreIcon,
-    SciFiGenreIcon,
-    ThrillerGenreIcon,
-    WarGenreIcon,
-    WesternGenreIcon
-} from 'assets/icons/genres/genreIcons';
+import { BROWSE_ICONS } from './browseIcons';
 
 export interface PickTileStyle {
-    Icon: SvgIconComponent;
-    iconColor: string;
+    iconSrc: string;
 }
 
 /**
- * How each decade is drawn, keyed by the first year of the decade.
- *
- * The icon nods to how films of that era were watched, and the colours run warm and faded for
- * the older decades through to cool and saturated for the recent ones, so the grid reads as a
- * timeline rather than a set of identical tiles.
+ * How each decade is drawn, keyed by the first year of the decade. Each decade has its own
+ * coloured illustration of how films of that era were watched.
  */
-const DECADE_STYLES: ReadonlyArray<readonly [number, PickTileStyle]> = [
-    [1940, { Icon: CameraRoll, iconColor: '#B08D57' }],
-    [1950, { Icon: Theaters, iconColor: '#C9A227' }],
-    [1960, { Icon: Radio, iconColor: '#D9814F' }],
-    [1970, { Icon: Album, iconColor: '#CC6B49' }],
-    [1980, { Icon: Videocam, iconColor: '#C05CB0' }],
-    [1990, { Icon: Tv, iconColor: '#5B8FD9' }],
-    [2000, { Icon: Slideshow, iconColor: '#4FA3C7' }],
-    [2010, { Icon: Hd, iconColor: '#4FB3A0' }],
-    [2020, { Icon: FourK, iconColor: '#5CD672' }]
-];
+const DECADE_STYLES: Readonly<Record<number, PickTileStyle>> = {
+    1910: { iconSrc: BROWSE_ICONS['decade-1910s'] },
+    1920: { iconSrc: BROWSE_ICONS['decade-1920s'] },
+    1930: { iconSrc: BROWSE_ICONS['decade-1930s'] },
+    1940: { iconSrc: BROWSE_ICONS['decade-1940s'] },
+    1950: { iconSrc: BROWSE_ICONS['decade-1950s'] },
+    1960: { iconSrc: BROWSE_ICONS['decade-1960s'] },
+    1970: { iconSrc: BROWSE_ICONS['decade-1970s'] },
+    1980: { iconSrc: BROWSE_ICONS['decade-1980s'] },
+    1990: { iconSrc: BROWSE_ICONS['decade-1990s'] },
+    2000: { iconSrc: BROWSE_ICONS['decade-2000s'] },
+    2010: { iconSrc: BROWSE_ICONS['decade-2010s'] },
+    2020: { iconSrc: BROWSE_ICONS['decade-2020s'] }
+};
 
-/** Anything before the first entry above shares the oldest treatment. */
-const OLDEST_DECADE_STYLE = DECADE_STYLES[0][1];
-const NEWEST_DECADE_STYLE = DECADE_STYLES[DECADE_STYLES.length - 1][1];
+/** Anything before 1910 shares the oldest treatment, anything after 2020 the newest. */
+const OLDEST_DECADE_STYLE = DECADE_STYLES[1910];
+const NEWEST_DECADE_STYLE = DECADE_STYLES[2020];
 
 export const getDecadeStyle = (startYear: number): PickTileStyle => {
-    if (startYear < DECADE_STYLES[0][0]) {
+    if (startYear < 1910) {
         return OLDEST_DECADE_STYLE;
     }
 
-    return DECADE_STYLES.find(([decade]) => decade === startYear)?.[1] ?? NEWEST_DECADE_STYLE;
+    return DECADE_STYLES[startYear] ?? NEWEST_DECADE_STYLE;
 };
 
 /**
- * Each genre gets its own icon and accent colour so the grid reads as distinct destinations
- * rather than a set of identical tiles. The icon shape is the primary differentiator; the colour
- * reinforces it.
+ * Each genre gets its own coloured illustration so the grid reads as distinct destinations rather
+ * than a set of identical tiles. Keys are normalised genre names; common aliases (including
+ * TV-style combined genres) share an icon.
  */
 const GENRE_STYLES: Readonly<Record<string, PickTileStyle>> = {
-    action: { Icon: ActionGenreIcon, iconColor: '#E53935' },
-    adventure: { Icon: AdventureGenreIcon, iconColor: '#FB8C00' },
-    animation: { Icon: AnimationGenreIcon, iconColor: '#FDD835' },
-    animated: { Icon: AnimationGenreIcon, iconColor: '#FDD835' },
-    comedy: { Icon: ComedyGenreIcon, iconColor: '#F06292' },
-    crime: { Icon: CrimeGenreIcon, iconColor: '#546E7A' },
-    documentary: { Icon: DocumentaryGenreIcon, iconColor: '#1E88E5' },
-    drama: { Icon: DramaGenreIcon, iconColor: '#8E24AA' },
-    family: { Icon: FamilyGenreIcon, iconColor: '#43A047' },
-    fantasy: { Icon: FantasyGenreIcon, iconColor: '#5E35B1' },
-    history: { Icon: HistoryGenreIcon, iconColor: '#8D6E63' },
-    horror: { Icon: HorrorGenreIcon, iconColor: '#C62828' },
-    music: { Icon: MusicGenreIcon, iconColor: '#26A69A' },
-    mystery: { Icon: MysteryGenreIcon, iconColor: '#3949AB' },
-    romance: { Icon: RomanceGenreIcon, iconColor: '#EC407A' },
-    romantic: { Icon: RomanceGenreIcon, iconColor: '#EC407A' },
-    scifi: { Icon: SciFiGenreIcon, iconColor: '#00ACC1' },
-    sciencefiction: { Icon: SciFiGenreIcon, iconColor: '#00ACC1' },
-    thriller: { Icon: ThrillerGenreIcon, iconColor: '#EF6C00' },
-    war: { Icon: WarGenreIcon, iconColor: '#6D4C41' },
-    western: { Icon: WesternGenreIcon, iconColor: '#C9A227' }
+    action: { iconSrc: BROWSE_ICONS['genre-action'] },
+    actionadventure: { iconSrc: BROWSE_ICONS['genre-action'] },
+    adventure: { iconSrc: BROWSE_ICONS['genre-adventure'] },
+    animation: { iconSrc: BROWSE_ICONS['genre-animation'] },
+    animated: { iconSrc: BROWSE_ICONS['genre-animation'] },
+    comedy: { iconSrc: BROWSE_ICONS['genre-comedy'] },
+    crime: { iconSrc: BROWSE_ICONS['genre-crime'] },
+    documentary: { iconSrc: BROWSE_ICONS['genre-documentary'] },
+    drama: { iconSrc: BROWSE_ICONS['genre-drama'] },
+    family: { iconSrc: BROWSE_ICONS['genre-family'] },
+    kids: { iconSrc: BROWSE_ICONS['genre-family'] },
+    fantasy: { iconSrc: BROWSE_ICONS['genre-fantasy'] },
+    history: { iconSrc: BROWSE_ICONS['genre-history'] },
+    biography: { iconSrc: BROWSE_ICONS['genre-history'] },
+    horror: { iconSrc: BROWSE_ICONS['genre-horror'] },
+    music: { iconSrc: BROWSE_ICONS['genre-music'] },
+    musical: { iconSrc: BROWSE_ICONS['genre-music'] },
+    mystery: { iconSrc: BROWSE_ICONS['genre-mystery'] },
+    romance: { iconSrc: BROWSE_ICONS['genre-romance'] },
+    romantic: { iconSrc: BROWSE_ICONS['genre-romance'] },
+    scifi: { iconSrc: BROWSE_ICONS['genre-scifi'] },
+    sciencefiction: { iconSrc: BROWSE_ICONS['genre-scifi'] },
+    scififantasy: { iconSrc: BROWSE_ICONS['genre-scifi'] },
+    thriller: { iconSrc: BROWSE_ICONS['genre-thriller'] },
+    war: { iconSrc: BROWSE_ICONS['genre-war'] },
+    warpolitics: { iconSrc: BROWSE_ICONS['genre-war'] },
+    western: { iconSrc: BROWSE_ICONS['genre-western'] }
 };
 
-/** Genres without a dedicated icon share the generic category glyph. */
-const FALLBACK_GENRE_STYLE: PickTileStyle = { Icon: Category, iconColor: '#9AA5B1' };
+/** Genres without a dedicated icon share the generic film-strip glyph. */
+const FALLBACK_GENRE_STYLE: PickTileStyle = { iconSrc: BROWSE_ICONS['genre-other'] };
 
 /** Normalises a genre name for lookup: case-insensitive with punctuation and spacing ignored. */
 const normalizeGenre = (genre: string): string =>
@@ -117,14 +84,14 @@ export const getGenreStyle = (genre: string): PickTileStyle =>
  * Age ratings graded by how restrictive they are, from everyone through to adults only.
  */
 export const RATING_LEVELS = {
-    everyone: { Icon: ChildCare, iconColor: '#5CD672' },
-    guidance: { Icon: FamilyRestroom, iconColor: '#9CCC65' },
-    teen: { Icon: Groups, iconColor: '#EECE55' },
-    mature: { Icon: Warning, iconColor: '#F08A5D' },
-    adult: { Icon: Explicit, iconColor: '#E0533D' },
-    specialAdult: { Icon: Block, iconColor: '#B71C1C' },
-    unrated: { Icon: HelpOutline, iconColor: '#9AA5B1' },
-    pending: { Icon: HourglassEmpty, iconColor: '#9AA5B1' }
+    everyone: { iconSrc: BROWSE_ICONS['rating-everyone'] },
+    guidance: { iconSrc: BROWSE_ICONS['rating-guidance'] },
+    teen: { iconSrc: BROWSE_ICONS['rating-teen'] },
+    mature: { iconSrc: BROWSE_ICONS['rating-mature'] },
+    adult: { iconSrc: BROWSE_ICONS['rating-adult'] },
+    specialAdult: { iconSrc: BROWSE_ICONS['rating-special-adult'] },
+    unrated: { iconSrc: BROWSE_ICONS['rating-unrated'] },
+    pending: { iconSrc: BROWSE_ICONS['rating-pending'] }
 } as const satisfies Record<string, PickTileStyle>;
 
 export type RatingLevel = keyof typeof RATING_LEVELS;

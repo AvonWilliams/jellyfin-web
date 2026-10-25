@@ -8,6 +8,7 @@ import Stack from '@mui/material/Stack';
 import SvgIcon, { type SvgIconProps } from '@mui/material/SvgIcon';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
+import type { SvgIconComponent } from '@mui/icons-material';
 import ArrowBack from '@mui/icons-material/ArrowBack';
 import Shuffle from '@mui/icons-material/Shuffle';
 import ViewModule from '@mui/icons-material/ViewModule';
@@ -44,13 +45,19 @@ const glassSurface = (opts: { opacity: number; blur: number; radius: string }) =
     boxShadow: 'none'
 });
 
-/** Quiet left-aligned group label (People / Time / Quality) — plain text, no pill. */
+/** Quiet centred group label (Categories / Mood & Themes / People / Discover) — plain text, no pill. */
 const GROUP_LABEL_SX = {
-    fontSize: '0.875rem',
+    fontSize: 'max(0.75rem, calc(var(--tile-unit, 12px) * 1.25))',
     fontWeight: 600,
     color: 'text.secondary',
     letterSpacing: '0.03em',
-    paddingLeft: '4px'
+    textAlign: 'center'
+} as const;
+
+/** Smaller label for the least-prominent (compact) groups. */
+const COMPACT_GROUP_LABEL_SX = {
+    ...GROUP_LABEL_SX,
+    fontSize: 'max(0.6875rem, calc(var(--tile-unit, 12px) * 1))'
 } as const;
 
 /** Maps a picker's filter kind to the server's /Discover/Counts type. */
@@ -71,8 +78,7 @@ const buildNamedOptions = (
     entries: { label: string; value: string }[]
 ) => entries.map(entry => ({
     ...entry,
-    Icon: activePicker.Icon,
-    iconColor: activePicker.iconColor
+    iconSrc: activePicker.iconSrc
 }));
 
 /** Builds genre tiles from a plain list of names, each drawn with its own genre icon. */
@@ -131,8 +137,11 @@ const sortPickerOptions = <T extends { label: string; value: string; count?: num
     return options;
 };
 
+/** Tint of the procedural glyphs on the individual-year picker tiles. */
+const YEAR_NUMBER_COLOR = '#E8A33D';
+
 /** Procedural glyph for individual-year tiles: the four-digit year drawn large, no calendar. */
-const yearNumberIcon = (year: number): BrowseModeDefinition['Icon'] => {
+const yearNumberIcon = (year: number): SvgIconComponent => {
     const Icon = (props: SvgIconProps) => (
         <SvgIcon viewBox='0 0 100 100' {...props}>
             <text
@@ -149,7 +158,7 @@ const yearNumberIcon = (year: number): BrowseModeDefinition['Icon'] => {
             </text>
         </SvgIcon>
     );
-    return Icon as unknown as BrowseModeDefinition['Icon'];
+    return Icon as unknown as SvgIconComponent;
 };
 
 /** The query-filters fields the child-tile counts read from. */
@@ -203,14 +212,19 @@ const ITEM_KIND_BY_COLLECTION_TYPE: Partial<Record<CollectionType, BaseItemKind>
     [CollectionType.Tvshows]: BaseItemKind.Series
 };
 
+/** Tile tier on the Browse home: the primary row is the focus, then section rows, then compact groups. */
+type TileVariant = 'primary' | 'section' | 'compact';
+
 interface TileProps {
     label: string;
-    Icon?: BrowseModeDefinition['Icon'];
+    iconSrc?: string;
+    /** Procedural glyph tinted with `iconColor`, for tiles without an illustration (individual years). */
+    Icon?: SvgIconComponent;
     iconColor?: string;
     iconSize?: string;
     labelSize?: string;
     count?: number;
-    primary?: boolean;
+    variant?: TileVariant;
     onClick: () => void;
 }
 
@@ -232,33 +246,85 @@ const DEFAULT_TILE_SX = {
     }
 } as const;
 
-const PRIMARY_TILE_SX = {
+/**
+ * Every home-page size is a multiple of one fluid unit (`--tile-unit`, set on the home root and
+ * scaled with the viewport), so the three tiers keep the same ratio at any screen size.
+ */
+const unit = (n: number) => `calc(var(--tile-unit, 12px) * ${n})`;
+
+/** Tile widths (in units) per tier: primary 15.5 : section 13 : compact 10. */
+const HOME_TILE_WIDTH: Record<TileVariant, number> = { primary: 15.5, section: 13, compact: 10 };
+
+const HOME_TILE_BASE_SX = {
     flexDirection: 'column',
-    gap: '14px',
     justifyContent: 'center',
-    width: '100%',
-    height: '160px',
-    padding: '20px 16px',
-    ...glassSurface({ opacity: 0.6, blur: 12, radius: '10px' }),
+    flexShrink: 0,
+    ...glassSurface({ opacity: 0.65, blur: 14, radius: '12px' }),
     transition: 'background-color 150ms ease, border-color 150ms ease',
     '&:hover, &:focus-visible': {
-        backgroundColor: 'rgba(var(--jf-palette-background-paperChannel, 32 32 32) / 0.7)',
+        backgroundColor: 'rgba(var(--jf-palette-background-paperChannel, 32 32 32) / 0.8)',
         borderColor: 'var(--jf-palette-text-secondary, rgba(255, 255, 255, 0.7))'
     }
 } as const;
 
-const Tile: FC<TileProps> = ({ label, Icon, iconColor, iconSize, labelSize, count, primary, onClick }) => (
+const HOME_TILE_SX: Record<TileVariant, object> = {
+    primary: {
+        ...HOME_TILE_BASE_SX,
+        width: unit(HOME_TILE_WIDTH.primary),
+        aspectRatio: '1 / 1',
+        gap: unit(1.2),
+        padding: unit(0.8),
+        borderRadius: unit(1.2)
+    },
+    section: {
+        ...HOME_TILE_BASE_SX,
+        width: unit(HOME_TILE_WIDTH.section),
+        aspectRatio: '1.5 / 1',
+        gap: unit(0.6),
+        padding: unit(0.7),
+        borderRadius: unit(1)
+    },
+    compact: {
+        ...HOME_TILE_BASE_SX,
+        width: unit(HOME_TILE_WIDTH.compact),
+        aspectRatio: '1.5 / 1',
+        gap: unit(0.45),
+        padding: unit(0.4),
+        borderRadius: unit(0.8)
+    }
+};
+
+const HOME_TILE_ICON_SIZE: Record<TileVariant, string> = {
+    primary: unit(7.2),
+    section: unit(3.5),
+    compact: unit(2.6)
+};
+
+const HOME_TILE_LABEL_SIZE: Record<TileVariant, string> = {
+    primary: unit(1.5),
+    section: `max(11px, ${unit(1.15)})`,
+    compact: `max(10px, ${unit(1)})`
+};
+
+const HOME_TILE_COUNT_SIZE: Record<TileVariant, string> = {
+    primary: unit(1.1),
+    section: `max(10px, ${unit(0.95)})`,
+    compact: `max(9px, ${unit(0.85)})`
+};
+
+const Tile: FC<TileProps> = ({ label, iconSrc, Icon, iconColor, iconSize, labelSize, count, variant, onClick }) => (
     <ButtonBase
         onClick={onClick}
         focusRipple
-        sx={primary ? PRIMARY_TILE_SX : DEFAULT_TILE_SX}
+        sx={variant ? HOME_TILE_SX[variant] : DEFAULT_TILE_SX}
     >
-        {Icon ? <Icon sx={{ fontSize: iconSize ?? (primary ? '3.5rem' : '3.75rem'), color: iconColor }} /> : null}
-        <Typography variant='subtitle1' sx={{ textAlign: 'center', lineHeight: 1.2, fontSize: labelSize ?? (primary ? '1.25rem' : '0.95rem'), fontWeight: primary ? 400 : undefined, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
+        {iconSrc ? <Box component='img' src={iconSrc} alt='' draggable={false} sx={{ width: iconSize ?? (variant ? HOME_TILE_ICON_SIZE[variant] : '3.75rem'), height: iconSize ?? (variant ? HOME_TILE_ICON_SIZE[variant] : '3.75rem'), flexShrink: 0 }} /> : null}
+        {Icon ? <Icon sx={{ fontSize: iconSize ?? (variant ? HOME_TILE_ICON_SIZE[variant] : '3.75rem'), color: iconColor }} /> : null}
+        <Typography variant='subtitle1' sx={{ textAlign: 'center', lineHeight: 1.2, fontSize: labelSize ?? (variant ? HOME_TILE_LABEL_SIZE[variant] : '0.95rem'), fontWeight: variant === 'primary' ? 400 : undefined, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
             {label}
         </Typography>
         {count !== undefined ? (
-            <Typography variant='body2' sx={{ color: 'text.secondary', textAlign: 'center', lineHeight: 1 }}>
+            <Typography variant='body2' sx={{ color: 'text.secondary', textAlign: 'center', lineHeight: 1, fontSize: variant ? HOME_TILE_COUNT_SIZE[variant] : undefined }}>
                 {count}
             </Typography>
         ) : null}
@@ -270,19 +336,18 @@ const BrowseModeTile: FC<{
     onSelect: (definition: BrowseModeDefinition) => void;
     iconSize?: string;
     labelSize?: string;
-    primary?: boolean;
+    variant?: TileVariant;
     count?: number;
-}> = ({ definition, onSelect, iconSize, labelSize, primary, count }) => {
+}> = ({ definition, onSelect, iconSize, labelSize, variant, count }) => {
     const onClick = useCallback(() => onSelect(definition), [onSelect, definition]);
 
     return (
         <Tile
             label={globalize.translate(definition.label)}
-            Icon={definition.Icon}
-            iconColor={definition.iconColor}
+            iconSrc={definition.iconSrc}
             iconSize={iconSize}
             labelSize={labelSize}
-            primary={primary}
+            variant={variant}
             count={count}
             onClick={onClick}
         />
@@ -292,14 +357,15 @@ const BrowseModeTile: FC<{
 const PickTile: FC<{
     label: string;
     value: string;
-    Icon?: BrowseModeDefinition['Icon'];
+    iconSrc?: string;
+    Icon?: SvgIconComponent;
     iconColor?: string;
     count?: number;
     onSelect: (value: string) => void;
-}> = ({ label, value, Icon, iconColor, count, onSelect }) => {
+}> = ({ label, value, iconSrc, Icon, iconColor, count, onSelect }) => {
     const onClick = useCallback(() => onSelect(value), [onSelect, value]);
 
-    return <Tile label={label} Icon={Icon} iconColor={iconColor} count={count} onClick={onClick} />;
+    return <Tile label={label} iconSrc={iconSrc} Icon={Icon} iconColor={iconColor} count={count} onClick={onClick} />;
 };
 
 const TileGrid: FC<{ children: React.ReactNode }> = ({ children }) => (
@@ -314,46 +380,110 @@ const TileGrid: FC<{ children: React.ReactNode }> = ({ children }) => (
     </Box>
 );
 
-/** Even six-column grid for the primary modes, collapsing to fewer columns on narrow widths. */
+/** How many tiles of a tier sit on one line at each breakpoint; `lg` always spans the full width. */
+type TilesPerLine = { xs: number; sm?: number; lg: number };
+
+/**
+ * A centred, wrapping row of fixed-size tiles. Lines are packed from the centre outwards, so a
+ * shorter line is centred under a fuller one, every line shares one tile pitch and the line gap
+ * (`gap`, in units) is constant. The row is only as wide as `perLine` tiles, so it wraps at the
+ * intended count (6 -> 3+3, 5 -> 3+2) rather than leaving an orphan. At `lg` a single line instead
+ * spans the whole width: the leftover width becomes an even column gap, never less than `gap`.
+ */
+const homeRowSx = (variant: TileVariant, perLine: TilesPerLine, gap: number) => {
+    const tile = HOME_TILE_WIDTH[variant];
+    const fixedWidth = (count: number) => `calc(${unit(tile * count + gap * (count - 1))} + 1px)`;
+    const { xs, sm = xs, lg } = perLine;
+
+    return {
+        display: 'flex',
+        flexWrap: 'wrap',
+        justifyContent: 'center',
+        maxWidth: '100%',
+        rowGap: unit(gap),
+        width: { xs: fixedWidth(xs), sm: fixedWidth(sm), lg: '100%' },
+        columnGap: {
+            xs: unit(gap),
+            lg: `max(${unit(gap)}, calc((100% - ${unit(tile * lg)}) / ${lg - 1}))`
+        }
+    };
+};
+
+const PRIMARY_ROW_SX = homeRowSx('primary', { xs: 2, sm: 3, lg: 6 }, 1.6);
+const SECTION_ROW_SX = homeRowSx('section', { xs: 3, lg: 5 }, 1.2);
+const COMPACT_ROW_TILES_SX = homeRowSx('compact', { xs: 3, lg: 3 }, 1);
+
+/** Vertical space the home page cannot use: the app header plus the page's top and bottom padding. */
+const HOME_CHROME_PX = 178;
+
+/**
+ * Home root: defines the fluid unit every home tile size is a multiple of. Narrow screens use a
+ * larger share of the width; from `lg` the unit is limited by the viewport height as well.
+ */
+const HOME_ROOT_SX = {
+    width: '100%',
+    '--tile-unit': 'clamp(5px, 2.1vw, 15px)',
+    '@media (min-width: 600px)': {
+        '--tile-unit': 'clamp(6px, 1.8vw, 15px)'
+    },
+    '@media (min-width: 1200px)': {
+        // The page height is ~58 units (title + four rows + headings + gaps), so the unit is also
+        // limited by the height left under the app header: nothing falls below the fold.
+        '--tile-unit': `clamp(6px, min(0.88vw, calc((100dvh - ${HOME_CHROME_PX}px) / 58)), 17px)`
+    }
+} as const;
+
+/** Side margin of the home page, as a share of the viewport (ATV uses roughly 4.5%). */
+const HOME_PADDING_X = '4.5vw';
+
+/**
+ * Two groups (People | Discover) sharing one row: each fills half the page (minus a central
+ * gutter) so the pair is mirror-balanced about the centre and spans the same edges as the rows
+ * above. Stacks on narrow screens.
+ */
+const COMPACT_ROW_SX = {
+    display: 'grid',
+    gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' },
+    columnGap: '10vw',
+    rowGap: unit(2.4),
+    width: '100%'
+} as const;
+
+/** The six primary modes: the largest tiles, 6 across, dropping to 3 then 2 on narrow widths. */
 const PrimaryTileGrid: FC<{ children: React.ReactNode }> = ({ children }) => (
-    <Box
-        sx={{
-            display: 'grid',
-            gridTemplateColumns: {
-                xs: 'repeat(2, minmax(0, 1fr))',
-                sm: 'repeat(3, minmax(0, 1fr))',
-                lg: 'repeat(6, minmax(0, 1fr))'
-            },
-            gap: '20px'
-        }}
-    >
+    <Box sx={PRIMARY_ROW_SX}>
         {children}
     </Box>
 );
 
-/** Compact inline text links for a meta category with a small fixed set of leaf children. */
+/** An inline category on the home page: a centred heading over a centred row of tiles. */
 const InlineModeLinks: FC<{
     definition: BrowseModeDefinition;
     children: BrowseModeDefinition[];
     onSelect: (definition: BrowseModeDefinition) => void;
     getCount?: (definition: BrowseModeDefinition) => number;
-}> = ({ definition, children, onSelect, getCount }) => (
-    <Stack spacing={1}>
-        <Typography variant='h3' sx={GROUP_LABEL_SX}>
-            {globalize.translate(definition.label)}
-        </Typography>
-        <TileGrid>
-            {children.map(child => (
-                <BrowseModeTile
-                    key={child.mode}
-                    definition={child}
-                    onSelect={onSelect}
-                    count={getCount ? getCount(child) || undefined : undefined}
-                />
-            ))}
-        </TileGrid>
-    </Stack>
-);
+}> = ({ definition, children, onSelect, getCount }) => {
+    const variant = definition.compact ? 'compact' : 'section';
+
+    return (
+        <Stack spacing={definition.compact ? unit(0.9) : unit(1.2)} alignItems='center' sx={{ minWidth: 0, width: '100%' }}>
+            <Typography variant='h3' sx={definition.compact ? COMPACT_GROUP_LABEL_SX : GROUP_LABEL_SX}>
+                {globalize.translate(definition.label)}
+            </Typography>
+            <Box sx={definition.compact ? COMPACT_ROW_TILES_SX : SECTION_ROW_SX}>
+                {children.map(child => (
+                    <BrowseModeTile
+                        key={child.mode}
+                        definition={child}
+                        onSelect={onSelect}
+                        variant={variant}
+                        count={getCount ? getCount(child) || undefined : undefined}
+                    />
+                ))}
+            </Box>
+        </Stack>
+    );
+};
 
 /** Lists the library's people of one kind (Actor/Director/Writer) as clickable person cards. */
 const PeopleCards: FC<{ parentId?: string; personType?: PersonKind; itemKind?: BaseItemKind }> = ({ parentId, personType, itemKind }) => {
@@ -658,7 +788,7 @@ const Browse: FC = () => {
             return [];
         }
 
-        let options: Array<{ label: string; value: string; Icon?: BrowseModeDefinition['Icon']; iconColor?: string; count?: number }> = [];
+        let options: Array<{ label: string; value: string; iconSrc?: string; Icon?: SvgIconComponent; iconColor?: string; count?: number }> = [];
 
         if (activePicker.picker?.filter === 'Years') {
             if (activePicker.picker.individualYears) {
@@ -669,7 +799,7 @@ const Browse: FC = () => {
                         label: String(year),
                         value: String(year),
                         Icon: yearNumberIcon(year),
-                        iconColor: activePicker.iconColor,
+                        iconColor: YEAR_NUMBER_COLOR,
                         count: yearCounts[String(year)]
                     }));
             } else {
@@ -718,8 +848,7 @@ const Browse: FC = () => {
                 .map(tag => ({
                     label: toTitleCase(tag),
                     value: tag,
-                    Icon: activePicker.Icon,
-                    iconColor: activePicker.iconColor
+                    iconSrc: activePicker.iconSrc
                 }));
         }
 
@@ -924,6 +1053,7 @@ const Browse: FC = () => {
                                         key={option.value}
                                         label={option.label}
                                         value={option.value}
+                                        iconSrc={option.iconSrc}
                                         Icon={option.Icon}
                                         iconColor={option.iconColor}
                                         count={option.count ?? pickerCounts[option.value] ?? pickerCounts[option.label]}
@@ -972,11 +1102,12 @@ const Browse: FC = () => {
     const isHomeView = !activePicker && !activeGroup && !activePersonType;
 
     // Render meta modes in array order: consecutive non-inline pickers are batched into shared
-    // grids, inline groups render as labeled sections. Preserves usefulness order while each row
-    // fills horizontally.
+    // grids, inline groups render as labeled sections, and consecutive compact groups share one
+    // centred, mirror-balanced row. Preserves usefulness order while each row stays centred.
     const renderMetaSections = () => {
         const sections: React.ReactNode[] = [];
         let pickerBatch: BrowseModeDefinition[] = [];
+        let compactBatch: React.ReactNode[] = [];
 
         const flushPickers = () => {
             if (pickerBatch.length) {
@@ -995,10 +1126,21 @@ const Browse: FC = () => {
             }
         };
 
+        const flushCompact = () => {
+            if (compactBatch.length) {
+                sections.push(
+                    <Box key={`compact-${sections.length}`} sx={COMPACT_ROW_SX}>
+                        {compactBatch}
+                    </Box>
+                );
+                compactBatch = [];
+            }
+        };
+
         for (const definition of metaModes) {
             if (definition.inline) {
                 flushPickers();
-                sections.push(
+                const section = (
                     <InlineModeLinks
                         key={definition.mode}
                         definition={definition}
@@ -1009,29 +1151,43 @@ const Browse: FC = () => {
                         getCount={child => childEntryCount(child, filters, studios, personCounts)}
                     />
                 );
+                if (definition.compact) {
+                    compactBatch.push(section);
+                } else {
+                    flushCompact();
+                    sections.push(section);
+                }
             } else {
+                flushCompact();
                 pickerBatch.push(definition);
             }
         }
         flushPickers();
+        flushCompact();
 
         return sections;
     };
 
     const renderHome = () => (
-        <Stack spacing='28px'>
+        <Stack spacing={unit(2.4)} alignItems='center' sx={HOME_ROOT_SX}>
+            {library?.Name ? (
+                <Typography variant='h1' sx={{ width: '100%', textAlign: 'center', fontSize: `max(1.125rem, ${unit(2.6)})`, fontWeight: 500, lineHeight: 1.15 }}>
+                    {library.Name}
+                </Typography>
+            ) : null}
+
             <PrimaryTileGrid>
                 {primaryModes.map(definition => (
                     <BrowseModeTile
                         key={definition.mode}
                         definition={definition}
                         onSelect={onModeClick}
-                        primary
+                        variant='primary'
                     />
                 ))}
             </PrimaryTileGrid>
 
-            <Stack spacing='40px'>
+            <Stack spacing={unit(2.4)} alignItems='center' sx={{ width: '100%' }}>
                 {renderMetaSections()}
             </Stack>
         </Stack>
@@ -1045,7 +1201,10 @@ const Browse: FC = () => {
         >
             <LibraryBackdrop libraryId={libraryId} />
 
-            <Box className='padded-left padded-right padded-top padded-bottom-page' sx={{ position: 'relative', zIndex: 1 }}>
+            <Box
+                className={isHomeView ? 'padded-top padded-bottom-page' : 'padded-left padded-right padded-top padded-bottom-page'}
+                sx={{ position: 'relative', zIndex: 1, ...(isHomeView ? { paddingX: HOME_PADDING_X } : null) }}
+            >
                 {isHomeView ? (
                     tileLayoutLoaded ? renderHome() : null
                 ) : (

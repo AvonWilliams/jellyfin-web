@@ -1,4 +1,3 @@
-import type { SvgIconComponent } from '@mui/icons-material';
 import type { PersonKind } from '@jellyfin/sdk/lib/generated-client/models/person-kind';
 
 import type { LibraryViewSettings } from './library';
@@ -59,10 +58,8 @@ export interface BrowseModeDefinition {
     mode: BrowseMode;
     /** Key passed to globalize.translate for the tile caption. */
     label: string;
-    /** Icon shown on the tile. */
-    Icon: SvgIconComponent;
-    /** Colour of the tile icon. Kept in step with the Android TV client's palette. */
-    iconColor: string;
+    /** Coloured SVG shown on the tile, rendered as an image (it carries its own fills). */
+    iconSrc: string;
     /** Where the tile sits on the library home page: 'primary' quick-access vs 'meta' section. */
     tier: 'primary' | 'meta';
     /** Opens this view rather than the library's default one. */
@@ -75,6 +72,8 @@ export interface BrowseModeDefinition {
     children?: readonly BrowseMode[];
     /** For a meta category: render its children as inline text links instead of tiles. */
     inline?: boolean;
+    /** For an inline category: draw it as a smaller, least-prominent group sharing a row with its neighbours. */
+    compact?: boolean;
     /** Source used for ranked fetches (e.g. Discover endpoints). Defaults to 'tmdb'. */
     source?: string;
     /** For a people leaf (Actors/Directors/Writers): the person kind to list. */
