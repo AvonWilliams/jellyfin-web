@@ -9,3 +9,9 @@ declare module '*.scss' {
     const value: string;
     export default value;
 }
+
+declare module '*.svg' {
+    // svg imports resolve to the emitted asset's URL
+    const value: string;
+    export default value;
+}
