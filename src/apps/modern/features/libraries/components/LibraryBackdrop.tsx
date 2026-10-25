@@ -17,9 +17,9 @@ const BACKDROP_BASE_SX = {
 /** Frosted (blurred) overlay of the same image, clearest at the centre and frosting toward the edges. */
 const BACKDROP_FROST_SX = {
     ...BACKDROP_BASE_SX,
-    filter: 'blur(20px) saturate(130%)',
-    WebkitMaskImage: 'radial-gradient(ellipse at center, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.2) 32%, black 82%)',
-    maskImage: 'radial-gradient(ellipse at center, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.2) 32%, black 82%)'
+    filter: 'blur(72px) saturate(130%)',
+    WebkitMaskImage: 'radial-gradient(ellipse at center, rgba(0, 0, 0, 0.75) 0%, rgba(0, 0, 0, 0.75) 32%, black 82%)',
+    maskImage: 'radial-gradient(ellipse at center, rgba(0, 0, 0, 0.75) 0%, rgba(0, 0, 0, 0.75) 32%, black 82%)'
 } as const;
 
 /** Light scrim that fades toward the bottom, keeping the frosted zone dim enough for tiles. */
