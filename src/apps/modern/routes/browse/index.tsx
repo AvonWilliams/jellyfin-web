@@ -232,7 +232,7 @@ const DEFAULT_TILE_SX = {
     flexDirection: 'column',
     gap: '10px',
     justifyContent: 'center',
-    width: '100%',
+    flexShrink: 0,
     aspectRatio: '1 / 1',
     padding: 2,
     borderRadius: 2,
@@ -374,12 +374,30 @@ const PickTile: FC<{
     return <Tile label={label} iconSrc={iconSrc} Icon={Icon} iconColor={iconColor} count={count} onClick={onClick} />;
 };
 
+/** Gap between picker tiles, in px, shared by the tile width maths below. */
+const PICKER_GAP = 16;
+
+/** Tiles per line of the tile-only pages (pickers and groups) at each breakpoint. */
+const PICKER_COLUMNS = { xs: 3, sm: 4, md: 6, lg: 8, xl: 10 };
+
+/** Width of one picker tile so exactly `columns` of them (and their gaps) fill a line. */
+const pickerTileWidth = (columns: number) => `calc((100% - ${PICKER_GAP * (columns - 1)}px) / ${columns} - 0.5px)`;
+
+/**
+ * Tile-only pages (pickers, groups): fluid tiles on a fixed number of columns per breakpoint, in
+ * a centred wrapping row, so a partial last line is centred under the full lines on the same
+ * tile pitch and the line and column gaps stay equal.
+ */
 const TileGrid: FC<{ children: React.ReactNode }> = ({ children }) => (
     <Box
         sx={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
-            gap: 2
+            display: 'flex',
+            flexWrap: 'wrap',
+            justifyContent: 'center',
+            gap: `${PICKER_GAP}px`,
+            '& > *': {
+                width: Object.fromEntries(Object.entries(PICKER_COLUMNS).map(([breakpoint, columns]) => [breakpoint, pickerTileWidth(columns)]))
+            }
         }}
     >
         {children}
