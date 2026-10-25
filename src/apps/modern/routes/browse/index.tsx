@@ -21,12 +21,13 @@ import { getDecadeStyle, getGenreStyle, getRatingLevel, RATING_LEVEL_LABEL, RATI
 import LibraryBackdrop from 'apps/modern/features/libraries/components/LibraryBackdrop';
 import TagRibbonsSection from 'apps/modern/features/libraries/components/TagRibbonsSection';
 import { LibraryRoutes } from 'apps/modern/features/libraries/constants/libraryRoutes';
-import { buildPeopleCards } from 'components/cardbuilder/peoplecardbuilder';
+import { appendPeopleCards, buildPeopleCards } from 'components/cardbuilder/peoplecardbuilder';
 import { CardShape } from 'components/cardbuilder/utils/shape';
 import Loading from 'components/loading/LoadingComponent';
 import Page from 'components/Page';
 import { useGetPersonItemCounts, useGetPersons, useGetQueryFiltersLegacy, useGetStudios } from 'hooks/useFetchItems';
 import { useApi } from 'hooks/useApi';
+import { isPersonIndexMissing, type PersonIndexItem, type PersonIndexSort, useGetPersonIndex } from 'hooks/usePersonIndex';
 import { useItem } from 'hooks/useItem';
 import globalize from 'lib/globalize';
 import { BrowseMode, type BrowseModeDefinition } from 'types/browseMode';
@@ -523,8 +524,234 @@ const InlineModeLinks: FC<{
     );
 };
 
+/** The four sort pills of a People page. */
+const PersonSortPills: FC<{ value: PersonIndexSort; onChange: (sort: PersonIndexSort) => void }> = ({ value, onChange }) => {
+    const handleClick = useCallback(
+        (event: React.MouseEvent<HTMLElement>) => onChange(event.currentTarget.dataset.sort as PersonIndexSort),
+        [onChange]
+    );
+
+    return (
+        <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+            {SORT_PILLS.map(pill => (
+                <ButtonBase
+                    key={pill.value}
+                    data-sort={pill.value}
+                    onClick={handleClick}
+                    aria-pressed={value === pill.value}
+                    sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        padding: '4px 14px',
+                        borderRadius: '999px',
+                        border: `1px solid ${value === pill.value ? 'var(--jf-palette-text-primary, rgba(255, 255, 255, 0.9))' : 'var(--jf-palette-divider, rgba(255, 255, 255, 0.12))'}`,
+                        backgroundColor: value === pill.value ? 'rgba(var(--jf-palette-background-paperChannel, 32 32 32) / 0.5)' : 'transparent',
+                        transition: 'background-color 120ms ease, border-color 120ms ease'
+                    }}
+                >
+                    <Typography
+                        variant='caption'
+                        sx={{ color: value === pill.value ? 'text.primary' : 'text.secondary', fontWeight: value === pill.value ? 600 : 400, lineHeight: 1, fontSize: '0.875rem' }}
+                    >
+                        {pill.label}
+                    </Typography>
+                </ButtonBase>
+            ))}
+        </Box>
+    );
+};
+
+/** The jump bar's buttons: "#" (names not starting A-Z) and A-Z. */
+const JUMP_LETTERS = ['#', ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'];
+
+/**
+ * A compact, centred row of first-letter buttons. Selecting a letter shows only the names that
+ * start with it; selecting it again shows everyone. A letter nobody starts with is disabled.
+ */
+const PersonJumpBar: FC<{
+    letters?: Record<string, number>;
+    value: string | null;
+    onChange: (letter: string | null) => void;
+}> = ({ letters, value, onChange }) => {
+    const handleClick = useCallback(
+        (event: React.MouseEvent<HTMLElement>) => {
+            const letter = event.currentTarget.dataset.letter ?? null;
+            onChange(letter === value ? null : letter);
+        },
+        [onChange, value]
+    );
+
+    return (
+        <Box
+            component='nav'
+            aria-label='Jump to a letter'
+            sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '2px' }}
+        >
+            {JUMP_LETTERS.map(letter => {
+                const count = letters?.[letter] ?? 0;
+                const active = value === letter;
+                return (
+                    <ButtonBase
+                        key={letter}
+                        disabled={!count && !active}
+                        data-letter={letter}
+                        onClick={handleClick}
+                        aria-pressed={active}
+                        aria-label={`${letter === '#' ? 'Other characters' : letter}, ${count} ${count === 1 ? 'person' : 'people'}`}
+                        sx={{
+                            minWidth: 28,
+                            height: 28,
+                            padding: '0 4px',
+                            borderRadius: '6px',
+                            border: `1px solid ${active ? 'var(--jf-palette-text-primary, rgba(255, 255, 255, 0.9))' : 'transparent'}`,
+                            backgroundColor: active ? 'rgba(var(--jf-palette-background-paperChannel, 32 32 32) / 0.5)' : 'transparent',
+                            transition: 'background-color 120ms ease, border-color 120ms ease',
+                            '&.Mui-disabled': { opacity: 0.3 },
+                            '&:hover': { backgroundColor: 'rgba(var(--jf-palette-background-paperChannel, 32 32 32) / 0.5)' }
+                        }}
+                    >
+                        <Typography
+                            variant='caption'
+                            sx={{ color: active ? 'text.primary' : 'text.secondary', fontWeight: active ? 600 : 400, lineHeight: 1, fontSize: '0.8125rem' }}
+                        >
+                            {letter}
+                        </Typography>
+                    </ButtonBase>
+                );
+            })}
+        </Box>
+    );
+};
+
+/** Set once the server has said it has no /Discover/People, so the session does not ask again. */
+let personIndexMissing = false;
+
+/** Turns an index entry into the item shape the person card builder reads. */
+const toPersonCardItem = (person: PersonIndexItem, serverId?: string) => ({
+    Id: person.Id,
+    Name: person.Name,
+    Type: 'Person',
+    ServerId: serverId,
+    RecursiveItemCount: person.Count,
+    ImageTags: person.ImageTag ? { Primary: person.ImageTag } : undefined
+});
+
+/**
+ * People of one kind, paged from the plugin's people index: the server sorts, counts and filters by
+ * first letter, and cards are appended as the list is scrolled rather than all built up front.
+ */
+const IndexedPeopleCards: FC<{ parentId?: string; personType?: PersonKind; onUnavailable: () => void }> = ({ parentId, personType, onUnavailable }) => {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const sentinelRef = useRef<HTMLDivElement>(null);
+    const rendered = useRef({ key: '', count: 0 });
+    const { __legacyApiClient__: legacyApiClient } = useApi();
+    const [personSort, setPersonSort] = useState<PersonIndexSort>('az');
+    const [letter, setLetter] = useState<string | null>(null);
+    const [letters, setLetters] = useState<Record<string, number>>();
+
+    const { data, error, isPending, isError, hasNextPage, isFetchingNextPage, fetchNextPage } = useGetPersonIndex(parentId, personType, personSort, letter);
+
+    // Without a first page to show, hand over to the older per-person requests.
+    useEffect(() => {
+        if (isError && !data) {
+            personIndexMissing = personIndexMissing || isPersonIndexMissing(error);
+            onUnavailable();
+        }
+    }, [isError, data, error, onUnavailable]);
+
+    const people = useMemo(() => data?.pages.flatMap(page => page.Items) ?? [], [data]);
+    const total = data?.pages[0]?.Total ?? 0;
+
+    useEffect(() => {
+        const firstLetters = data?.pages[0]?.Letters;
+        if (firstLetters) {
+            setLetters(firstLetters);
+        }
+    }, [data]);
+
+    // Build cards for the people not shown yet and leave the existing ones alone; a new library,
+    // kind, sort or letter starts the list again.
+    const resultKey = `${parentId}|${personType}|${personSort}|${letter}`;
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!container) {
+            return;
+        }
+
+        if (rendered.current.key !== resultKey) {
+            container.innerHTML = '';
+            rendered.current = { key: resultKey, count: 0 };
+        }
+
+        const fresh = people.slice(rendered.current.count);
+        if (!fresh.length) {
+            return;
+        }
+
+        appendPeopleCards(fresh.map(person => toPersonCardItem(person, legacyApiClient?.serverId())), {
+            itemsContainer: container,
+            coverImage: true,
+            shape: CardShape.PortraitOverflow
+        });
+        rendered.current.count = people.length;
+    }, [people, resultKey, legacyApiClient]);
+
+    // Ask for the next page when the end of the list scrolls near the screen.
+    useEffect(() => {
+        const sentinel = sentinelRef.current;
+        if (!sentinel || !hasNextPage || isFetchingNextPage) {
+            return;
+        }
+
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    void fetchNextPage();
+                }
+            },
+            { rootMargin: '600px' }
+        );
+        observer.observe(sentinel);
+        return () => observer.disconnect();
+    }, [hasNextPage, isFetchingNextPage, fetchNextPage, people.length]);
+
+    if (isError && !data) {
+        return null;
+    }
+
+    return (
+        <Stack spacing={2}>
+            {isPending && <Loading />}
+            <PersonSortPills value={personSort} onChange={setPersonSort} />
+            {letters && <PersonJumpBar letters={letters} value={letter} onChange={setLetter} />}
+            {!isPending && total === 0 && (
+                <Typography sx={{ color: 'text.secondary' }}>
+                    {globalize.translate('MessageNothingHere')}
+                </Typography>
+            )}
+            <div ref={containerRef} className='itemsContainer vertical-wrap' />
+            <div ref={sentinelRef} aria-hidden='true' style={{ height: 1 }} />
+        </Stack>
+    );
+};
+
 /** Lists the library's people of one kind (Actor/Director/Writer) as clickable person cards. */
 const PeopleCards: FC<{ parentId?: string; personType?: PersonKind; itemKind?: BaseItemKind }> = ({ parentId, personType, itemKind }) => {
+    const [useLegacy, setUseLegacy] = useState(personIndexMissing);
+    const handleUnavailable = useCallback(() => setUseLegacy(true), []);
+
+    if (useLegacy) {
+        return <LegacyPeopleCards parentId={parentId} personType={personType} itemKind={itemKind} />;
+    }
+
+    return <IndexedPeopleCards parentId={parentId} personType={personType} onUnavailable={handleUnavailable} />;
+};
+
+/**
+ * The original People list: fetches up to 500 persons and their counts and sorts them in the browser.
+ * Used only when the server has no /Discover/People (an older plugin) or the request fails.
+ */
+const LegacyPeopleCards: FC<{ parentId?: string; personType?: PersonKind; itemKind?: BaseItemKind }> = ({ parentId, personType, itemKind }) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const { data: people, isPending } = useGetPersons(parentId, personType);
     const { data: personCounts } = useGetPersonItemCounts(parentId, personType, itemKind);
@@ -580,31 +807,7 @@ const PeopleCards: FC<{ parentId?: string; personType?: PersonKind; itemKind?: B
 
     return (
         <Stack spacing={2}>
-            <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
-                {SORT_PILLS.map(pill => (
-                    <ButtonBase
-                        key={pill.value}
-                        onClick={() => setPersonSort(pill.value)}
-                        aria-pressed={personSort === pill.value}
-                        sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            padding: '4px 14px',
-                            borderRadius: '999px',
-                            border: `1px solid ${personSort === pill.value ? 'var(--jf-palette-text-primary, rgba(255, 255, 255, 0.9))' : 'var(--jf-palette-divider, rgba(255, 255, 255, 0.12))'}`,
-                            backgroundColor: personSort === pill.value ? 'rgba(var(--jf-palette-background-paperChannel, 32 32 32) / 0.5)' : 'transparent',
-                            transition: 'background-color 120ms ease, border-color 120ms ease'
-                        }}
-                    >
-                        <Typography
-                            variant='caption'
-                            sx={{ color: personSort === pill.value ? 'text.primary' : 'text.secondary', fontWeight: personSort === pill.value ? 600 : 400, lineHeight: 1, fontSize: '0.875rem' }}
-                        >
-                            {pill.label}
-                        </Typography>
-                    </ButtonBase>
-                ))}
-            </Box>
+            <PersonSortPills value={personSort} onChange={setPersonSort} />
             <div ref={containerRef} className='itemsContainer vertical-wrap' />
         </Stack>
     );
