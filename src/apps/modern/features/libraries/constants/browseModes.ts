@@ -367,38 +367,3 @@ export const getBrowseMode = (collectionType: CollectionType | null | undefined,
 
     return modeRegistryByCollectionType[collectionType]?.find(definition => definition.mode === mode);
 };
-
-/**
- * Reorders and filters the default modes to match a server-provided tile layout. Keys absent
- * from the layout are hidden; keys the layout mentions that this collection type does not offer
- * are skipped. An empty layout leaves the built-in order and visibility untouched.
- */
-const LEGACY_FLAT_KEYS = new Set([
-    'genres',
-    'studios',
-    'bymoodtone',
-    'bystory',
-    'byworldstyle',
-    'bytime'
-]);
-
-export const applyBrowseModeOrder = (
-    modes: BrowseModeDefinition[],
-    order?: string[] | null
-): BrowseModeDefinition[] => {
-    if (!order?.length) {
-        return modes;
-    }
-
-    // A saved order still holding the pre-four-group flat keys would silently hide the new
-    // thematic groups (Categories / Mood & Themes), since those keys no longer map to any mode.
-    // Treat such an order as stale and fall back to the built-in layout.
-    if (order.some(key => LEGACY_FLAT_KEYS.has(key))) {
-        return modes;
-    }
-
-    const byKey = new Map(modes.map(definition => [definition.mode, definition]));
-    return order
-        .map(key => byKey.get(key as BrowseMode))
-        .filter((definition): definition is BrowseModeDefinition => Boolean(definition));
-};

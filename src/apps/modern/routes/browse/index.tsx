@@ -16,7 +16,7 @@ import ViewStream from '@mui/icons-material/ViewStream';
 import React, { type FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
-import { applyBrowseModeOrder, getBrowseMode, getBrowseModes } from 'apps/modern/features/libraries/constants/browseModes';
+import { getBrowseMode, getBrowseModes } from 'apps/modern/features/libraries/constants/browseModes';
 import { getDecadeStyle, getGenreStyle, getRatingLevel, RATING_LEVEL_LABEL, RATING_LEVEL_ORDER, RATING_LEVELS, toTitleCase, type RatingLevel } from 'apps/modern/features/libraries/constants/pickTiles';
 import LibraryBackdrop from 'apps/modern/features/libraries/components/LibraryBackdrop';
 import TagRibbonsSection from 'apps/modern/features/libraries/components/TagRibbonsSection';
@@ -657,29 +657,10 @@ const Browse: FC = () => {
 
     const { data: library } = useItem(libraryId ?? undefined);
 
-    // The administrator's tile order and visibility, fetched from the plugin. An empty or
-    // missing layout falls back to the built-in order with every mode shown. Until the fetch
-    // settles we render nothing, so the full built-in grid never flashes before the admin's
-    // reduced/reordered layout arrives.
-    const [tileLayout, setTileLayout] = useState<string[]>();
-    const [tileLayoutLoaded, setTileLayoutLoaded] = useState(false);
-    useEffect(() => {
-        if (!api) {
-            setTileLayoutLoaded(true);
-            return;
-        }
-        api.axiosInstance
-            .get<string[]>(`${api.basePath}/Discover/TileLayout`, {
-                headers: { Authorization: api.authorizationHeader }
-            })
-            .then(({ data }) => setTileLayout(data))
-            .catch(() => setTileLayout(undefined))
-            .finally(() => setTileLayoutLoaded(true));
-    }, [api]);
-
+    // Every mode is always shown, in the fixed order the definitions are declared in.
     const browseModes = useMemo(
-        () => applyBrowseModeOrder(getBrowseModes(collectionType) ?? [], tileLayout),
-        [collectionType, tileLayout]
+        () => getBrowseModes(collectionType) ?? [],
+        [collectionType]
     );
 
     const primaryModes = useMemo(
@@ -1244,7 +1225,7 @@ const Browse: FC = () => {
                 sx={{ position: 'relative', zIndex: 1, ...(isHomeView ? { paddingX: HOME_PADDING_X } : null) }}
             >
                 {isHomeView ? (
-                    tileLayoutLoaded ? renderHome() : null
+                    renderHome()
                 ) : (
                     <Stack spacing={3}>
                         {renderBrowseContent()}
