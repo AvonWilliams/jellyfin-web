@@ -46,14 +46,43 @@ const glassSurface = (opts: { opacity: number; blur: number; radius: string }) =
     boxShadow: 'none'
 });
 
-/** Quiet centred group label (Categories / Mood & Themes / People / Discover) — plain text, no pill. */
+/**
+ * Dark glass tile behind a heading. Shares the theme-aware glass surface so it follows the active
+ * theme, and hugs the text instead of spanning the row.
+ */
+const titleGlassSx = (opts: { padX: string; padY: string; radius: string }) => ({
+    ...glassSurface({ opacity: 0.88, blur: 14, radius: opts.radius }),
+    width: 'fit-content',
+    padding: `${opts.padY} ${opts.padX}`,
+    boxSizing: 'border-box'
+});
+
+/**
+ * The tile grows past the text box instead of pushing the rows apart, so the page keeps the
+ * one-screen height it was tuned to. Must be an inline style: the parent Stack's
+ * `& > :not(style)` rule sets `margin: 0` on every child and outranks an sx class.
+ */
+const titleGlassOffset = (padY: string) => ({ marginBlock: `calc(-1 * ${padY})` });
+
+/** Vertical padding of the heading tiles, shared by the sx and the layout offset. */
+const TITLE_PAD_Y = 'calc(var(--tile-unit, 12px) * 0.7)';
+const GROUP_PAD_Y = 'calc(var(--tile-unit, 12px) * 0.4)';
+
+/** Quiet centred group label (Categories / Mood & Themes / People / Discover) on a dark glass tile. */
 const GROUP_LABEL_SX = {
     fontSize: 'max(0.75rem, calc(var(--tile-unit, 12px) * 1.25))',
     fontWeight: 600,
     color: 'text.secondary',
     letterSpacing: '0.03em',
-    textAlign: 'center'
+    textAlign: 'center',
+    ...titleGlassSx({
+        padX: 'calc(var(--tile-unit, 12px) * 1.2)',
+        padY: GROUP_PAD_Y,
+        radius: 'calc(var(--tile-unit, 12px) * 0.8)'
+    })
 } as const;
+
+const GROUP_LABEL_STYLE = titleGlassOffset(GROUP_PAD_Y);
 
 /** Smaller label for the least-prominent (compact) groups. */
 const COMPACT_GROUP_LABEL_SX = {
@@ -506,7 +535,11 @@ const InlineModeLinks: FC<{
 
     return (
         <Stack spacing={definition.compact ? unit(0.9) : unit(1.2)} alignItems='center' sx={{ minWidth: 0, width: '100%' }}>
-            <Typography variant='h3' sx={definition.compact ? COMPACT_GROUP_LABEL_SX : GROUP_LABEL_SX}>
+            <Typography
+                variant='h3'
+                sx={definition.compact ? COMPACT_GROUP_LABEL_SX : GROUP_LABEL_SX}
+                style={GROUP_LABEL_STYLE}
+            >
                 {globalize.translate(definition.label)}
             </Typography>
             <Box sx={definition.compact ? COMPACT_ROW_TILES_SX : SECTION_ROW_SX}>
@@ -1393,7 +1426,13 @@ const Browse: FC = () => {
     const renderHome = () => (
         <Stack spacing={unit(2.4)} alignItems='center' sx={HOME_ROOT_SX}>
             {library?.Name ? (
-                <Typography variant='h1' sx={{ width: '100%', textAlign: 'center', fontSize: `max(1.125rem, ${unit(2.6)})`, fontWeight: 500, lineHeight: 1.15 }}>
+                <Typography variant='h1' sx={{
+                    ...titleGlassSx({ padX: unit(2.4), padY: TITLE_PAD_Y, radius: unit(1) }),
+                    textAlign: 'center',
+                    fontSize: `max(1.125rem, ${unit(2.6)})`,
+                    fontWeight: 500,
+                    lineHeight: 1.15
+                }} style={titleGlassOffset(TITLE_PAD_Y)}>
                     {library.Name}
                 </Typography>
             ) : null}
