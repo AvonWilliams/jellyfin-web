@@ -267,7 +267,7 @@ const DEFAULT_TILE_SX = {
     padding: 2,
     borderRadius: 2,
     backgroundColor: 'rgba(var(--jf-palette-background-paperChannel, 32 32 32) / 0.7)',
-    backdropFilter: 'blur(10px)',
+    backdropFilter: 'blur(4px)',
     border: '1px solid var(--jf-palette-divider, rgba(255, 255, 255, 0.12))',
     transition: 'background-color 120ms ease, transform 120ms ease',
     '&:hover, &:focus-visible': {
@@ -295,7 +295,7 @@ const HOME_TILE_BASE_SX = {
     flexDirection: 'column',
     justifyContent: 'center',
     flexShrink: 0,
-    ...glassSurface({ opacity: 0.65, blur: 14, radius: '12px' }),
+    ...glassSurface({ opacity: 0.65, blur: 4, radius: '12px' }),
     transition: 'background-color 150ms ease, border-color 150ms ease',
     '&:hover, &:focus-visible': {
         backgroundColor: 'rgba(var(--jf-palette-background-paperChannel, 32 32 32) / 0.8)',
